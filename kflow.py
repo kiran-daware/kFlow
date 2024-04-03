@@ -1,24 +1,34 @@
 import pyshark
-import plantuml
+import json
 
 def generate_call_flow_diagram(pcap_file):
     # Open pcap file
     cap = pyshark.FileCapture(pcap_file)
     
     p=cap[0]
-    if 'IP' in p:
-        print(p.ip.field_names)
-    if 'UDP' in p:
-        print(p.udp.field_names)
+    # if 'IP' in p:
+    #     print(p.ip.field_names)
+    # if 'UDP' in p:
+    #     print(p.udp.field_names)
+    # if 'SIP' in p:
+    #     print(p.sip.field_names)
 
     # Initialize a dictionary to store call flows
     call_flows = {}
+    sip_msgs = {}
+    msgSr = 1
+    with open('flow.txt', 'w') as file:
+        file.write("")
 
     # Iterate over each packet
     for packet in cap:
         if 'SIP' in packet:
             # Extract SIP information
             sip = packet.sip
+            # print(str(sip))
+            sip_msgs.update({msgSr: str(sip)})
+            msgSr+=1
+
             call_id = sip.get_field_value('Call-ID')
             src_ip = f'"{packet.ip.src}:{packet.udp.srcport}"'
             dst_ip = f'"{packet.ip.dst}:{packet.udp.dstport}"'
@@ -49,9 +59,17 @@ def generate_call_flow_diagram(pcap_file):
         with open('flow.txt', 'a') as file:
             file.write(f"\n{src_ip}->{dst_ip} : {message}")
 
+        # print(sip_msgs)
+
+    # Convert dictionary to JSON string
+    sip_json = json.dumps(sip_msgs)
+    # Write JSON string to a file
+    with open('sip_dict.json', 'w') as json_file:
+        json_file.write(sip_json)
+
     
-    puml = plantuml.PlantUML("http://10.122.24.240:8080/img/")
-    puml.processes_file('flow.txt')
+    # puml = plantuml.PlantUML("http://10.122.24.240:8080/img/")
+    # puml.processes_file('flow.txt')
 
 
 

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="assets/webfont.js"></script>
+    <script src="assets/snap.svg-min.js"></script>
+    <script src="assets/underscore-min.js"></script>
+    <script src="assets/sequence-diagram-kmod.js"></script>
+    <script>
+        // Load the text file
+        fetch('flow.txt')
+        .then(response => response.text())
+        .then(data => {
+            // Draw the diagram
+            var diagram = Diagram.parse(data);
+            diagram.drawSVG('diagram', {theme: 'simple'});
+        });
+    </script>
+
+    <style type="text/css">
+        /* Add CSS rule to make the <g> element clickable */
+        /* #diagram, #diagram > svg {
+            pointer-events: none;
+        } */
+        
+        .signal {
+            cursor: pointer;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="diagram"></div>
+    
+
+    <script>
+    let sipDictData;
+
+    // read SIP msgs dictionary json
+    // Read the JSON file in JavaScript
+    function fetchSipDictData() {
+        fetch('sip_dict.json')
+            .then(response => response.json())
+            .then(data => {
+                // 'data' now contains your JavaScript object
+                console.log(data);
+                sipDictData = data;
+                // // You can access values by keys
+                // console.log(data['1']);  // Output: sip_msg
+                // console.log(data['2']);  // Output: 2sip_msg
+            })
+            .catch(error => console.error('Error reading JSON file:', error));
+        };
+    window.onload = fetchSipDictData;
+
+
+    // Function to extract numbers from a string using regex
+    function extractNumbers(str) {
+        const match = str.match(/\d+/); // Match one or more digits using regex
+        return match ? parseInt(match[0]) : null; // Parse the matched digits to integer
+    }
+    // show more function used in kmod.js file for signal elements to be clickable for more data
+    function showMore(id) {
+        nid=extractNumbers(id)
+        console.log(nid)
+        console.log(sipDictData[nid])
+    }
+
+
+    </script>
+    
+
+</body>
+</html>
