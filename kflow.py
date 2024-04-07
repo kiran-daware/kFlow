@@ -25,6 +25,7 @@ def generate_call_flow_diagram(pcap_file):
         if 'SIP' in packet:
             # Extract SIP information
             sip = packet.sip
+            # print(sip.field_names)
             # print(str(sip))
             sip_msgs.update({msgSr: str(sip)})
             msgSr+=1
@@ -56,8 +57,8 @@ def generate_call_flow_diagram(pcap_file):
                 call_flows[call_id].append({'src': src_ip, 'dst': dst_ip, 'msg': message})
 
 
-        with open('flow.txt', 'a') as file:
-            file.write(f"\n{src_ip}->{dst_ip} : {message}")
+            with open('flow.txt', 'a') as file:
+                file.write(f"\n{src_ip}->{dst_ip} : {message}")
 
         # print(sip_msgs)
 
@@ -107,5 +108,5 @@ def generate_call_flow_diagram(pcap_file):
 
 
 # # Example usage
-generate_call_flow_diagram("basic-call.pcapng")
+generate_call_flow_diagram("basic-call2.pcapng")
 

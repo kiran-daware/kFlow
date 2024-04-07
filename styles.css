@@ -1,0 +1,45 @@
+
+.signal {cursor: pointer;}
+.close {cursor: pointer;}
+
+line {
+  stroke: #898989;
+}
+
+.signal text {
+  fill: #010101;
+}
+.signal text:hover {
+  fill: #454545;
+}
+.note rect, .note path {
+  fill: #ffff00;
+}
+.title rect, .title path,
+.actor rect, .actor path {
+  fill: #f5f5c5
+}
+
+
+/* CSS for showing popup modal */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    padding-top: 10px;
+  }
+
+  /* Modal content */
+  .modal-content {
+    background-color: #fafafa;
+    margin: 5% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+  }
