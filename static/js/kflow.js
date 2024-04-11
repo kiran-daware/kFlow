@@ -16,9 +16,10 @@ function extractNumbers(str) {
 function showMore(id) {
     nid=extractNumbers(id)
     // console.log(sipDictData[nid])
-    var xmlContent=convertAnsiToHtml(sipDictData[nid])
+    var xmlContent=convertAnsiToHtml(sipDictData[nid]);
     document.getElementById("popup-content").innerHTML = xmlContent;
     document.getElementById("popup-modal").style.display = "block";
+    collapseSipLayers();
 }
 function closePopup() {
     // Hide the modal
@@ -42,29 +43,60 @@ function convertAnsiToHtml(text) {
     ansidecoded = ktext.replace(ansiRegex, function(match, code, text) {
         // Determine CSS styling based on ANSI escape codes
         code = parseInt(code);
-        var style = '';
+        var kClass = '';
         switch (code) {
             // case 1: // Bold
             //     style = 'font-weight: bold;';
             //     break;
             case 33: // Yellow
-                style = 'color: orange;';
+                kClass = 'k-layers';
                 break;
             case 32: // green
-                style = 'color: green;';
+                kClass = 'k-headers';
                 break;
             // Add more cases for other ANSI escape codes as needed
             default:
-                // Handle unsupported codes or other cases
+                kClass = 'k-values'
                 break;
         }
     
         // Wrap matched text with span and apply style
-        return '<span style="' + style + '">' + text + '</span>';
+        return '<span class="' + kClass + '">' + text + '</span>';
     });
     
+    ansidecoded=ansidecoded.replace(/\n:/g, " :\n");
+    var reForSipHeader = /(\t*)(Message Header|Message Body)/g;
     
-    var reForBoldHeader = /(\t*)(Message Header|Message Body)/g;
-    
-    return ansidecoded.replace(reForBoldHeader, '<span style="font-weight:bold;color:orange;">$2</span>');
+    return ansidecoded.replace(reForSipHeader, '<span class="k-sip">$2</span>');
+};
+
+
+
+// to make collapsible sip layers
+function collapseSipLayers(){
+    let layers = document.getElementsByClassName("k-layers");
+
+    // Initially hide all content except for the last one
+    for (let i = 0; i < layers.length -1; i++) {
+        let nextElement = layers[i].nextElementSibling;
+        while (nextElement && !nextElement.classList.contains("k-layers")) {
+            nextElement.style.display = 'none';
+            nextElement = nextElement.nextElementSibling;
+        }
+    }
+
+    for (let i = 0; i < layers.length; i++) {
+        layers[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          let content = this.nextElementSibling;
+          while (content && !content.classList.contains("k-layers")) {
+            if (content.style.display === "inline") {
+              content.style.display = "none";
+            } else {
+              content.style.display = "inline";
+            }
+            content = content.nextElementSibling;
+          }
+        });
     };
+};
