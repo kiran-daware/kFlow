@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    
+    <ul>
+        {% for filename in files %}
+            <li style="padding:5px;">
+                <form method="post">
+                    <a href="/kflow?pcapname={{ filename }}">{{ filename }} &nbsp;&nbsp;</a>
+                    <button style="font-size: 10px;" onclick="return confirm('Are you sure you want to delete this file : {{ file }}?')">Delete</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <div id="drop-area">
+        Drag & Drop files here <br>
+        <input type="file" id="file-input" accept=".pcap,.pcapng">
+        Or <button id="upload-btn">Click here to Upload</button>
+    </div>
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

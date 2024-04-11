@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>kFlow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <div id="diagram"></div>
+
+    <div id="popup-modal" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="closePopup()">Close &times;</span>
+          <pre id="popup-content"></pre>
+        </div>
+    </div>
+    
+
+    
+
+<!-- JavaScripts -->
+
+<script src="{{ url_for('static', filename='sdjs/webfont.js') }}"></script>
+<script src="{{ url_for('static', filename='sdjs/snap.svg-min.js') }}"></script>
+<script src="{{ url_for('static', filename='sdjs/underscore-min.js') }}"></script>
+<script src="{{ url_for('static', filename='sdjs/sequence-diagram-kmod.js') }}"></script>
+<script>
+    // Draw the diagram
+    let pcapName = '{{ pcapName }}'
+    let umlData = `{{ flowText|safe }}`
+    let diagram = Diagram.parse(umlData);
+    diagram.drawSVG('diagram', {theme: 'simple'});
+</script>
+<script src="{{ url_for('static', filename='js/kflow.js') }}"></script>
+
+</body>
+</html>
