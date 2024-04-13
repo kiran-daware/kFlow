@@ -11,7 +11,18 @@ pcap_file_path=os.path.join(data_path, 'basic-call.pcapng')
 
 cap = pyshark.FileCapture(pcap_file_path)
 p=cap[0]
-print(p.SIP.field_names)
-print(p.layers)
+# print(p.SIP.field_names)
+# print(p.layers)
 print(dir(p))
-print(p.frame_info)
+# print(p.frame_info)
+print(p.srcport)
+
+
+packet_str = ""
+
+# Add frame_info
+packet_str += p.frame_info.__str__()
+
+# Add other layers
+packet_str += p.__str__()
+# print(packet_str)

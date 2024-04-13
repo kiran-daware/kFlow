@@ -14,6 +14,7 @@ function extractNumbers(str) {
 }
 // show more function used in kmod.js file for signal elements to be clickable for more data
 function showMore(id) {
+    kpacketId=5
     nid=extractNumbers(id)
     // console.log(sipDictData[nid])
     var xmlContent=convertAnsiToHtml(sipDictData[nid]);
@@ -66,7 +67,7 @@ function convertAnsiToHtml(text) {
     
     ansidecoded=ansidecoded.replace(/\n:/g, " :\n");
     var reForSipHeader = /(\t*)(Message Header|Message Body)/g;
-    
+
     return ansidecoded.replace(reForSipHeader, '<span class="k-sip">$2</span>');
 };
 

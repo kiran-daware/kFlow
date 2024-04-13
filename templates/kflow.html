@@ -9,6 +9,16 @@
 </head>
 
 <body>
+    <ul>
+        {% for callid in loadCidList %}
+            <li style="padding:5px;">
+                <form method="post">
+                    <a href="/kflow?pcapname={{ pcapName }}&cid-no={{ loop.index }}">{{ callid }} &nbsp;&nbsp;</a>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
     <div id="diagram"></div>
 
     <div id="popup-modal" class="modal">
