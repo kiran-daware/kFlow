@@ -780,13 +780,13 @@
             SnapTheme = function(diagram, options, resume) {
                 _.defaults(options, {
                     "css-class": "simple",
-                    "font-size": 16,
+                    "font-size": 12, //kmod font-size changed from 16 to 12
                     "font-family": "Andale Mono, monospace"
                 }), this.init(diagram, options, resume)
             };
         
         // kmod new var for drawSignal unique msg id
-        var kpacketId = 1;
+        // var kpacketId = 1;
         
         _.extend(SnapTheme.prototype, BaseTheme.prototype, {
             init: function(diagram, options, resume) {

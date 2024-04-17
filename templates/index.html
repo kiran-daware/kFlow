@@ -12,7 +12,7 @@
         {% for filename in files %}
             <li style="padding:5px;">
                 <form method="post">
-                    <a href="/kflow?pcapname={{ filename }}">{{ filename }} &nbsp;&nbsp;</a>
+                    <a href="/calls?pcapname={{ filename }}">{{ filename }} &nbsp;&nbsp;</a>
                     <button style="font-size: 10px;" onclick="return confirm('Are you sure you want to delete this file : {{ file }}?')">Delete</button>
                 </form>
             </li>

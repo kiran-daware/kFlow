@@ -9,16 +9,6 @@
 </head>
 
 <body>
-    <ul>
-        {% for callid in loadCidList %}
-            <li style="padding:5px;">
-                <form method="post">
-                    <a href="/kflow?pcapname={{ pcapName }}&cid-no={{ loop.index }}">{{ callid }} &nbsp;&nbsp;</a>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
-
     <div id="diagram"></div>
 
     <div id="popup-modal" class="modal">
@@ -27,9 +17,7 @@
           <pre id="popup-content"></pre>
         </div>
     </div>
-    
 
-    
 
 <!-- JavaScripts -->
 
@@ -38,11 +26,16 @@
 <script src="{{ url_for('static', filename='sdjs/underscore-min.js') }}"></script>
 <script src="{{ url_for('static', filename='sdjs/sequence-diagram-kmod.js') }}"></script>
 <script>
-    // Draw the diagram
     let pcapName = '{{ pcapName }}'
+    let jsonName = '{{ jsonName }}'
+
+    // Draw the diagram
     let umlData = `{{ flowText|safe }}`
+    let kpacketId = 1;
     let diagram = Diagram.parse(umlData);
     diagram.drawSVG('diagram', {theme: 'simple'});
+
+
 </script>
 <script src="{{ url_for('static', filename='js/kflow.js') }}"></script>
 

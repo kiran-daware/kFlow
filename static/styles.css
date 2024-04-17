@@ -48,6 +48,21 @@ line {
   fill: #f5f5c5
 }
 
+.kcid1 line{stroke: orange}
+.kcid1 text{fill:orange!important;}
+
+.kcid2 line{stroke: blueviolet;}
+.kcid2 text{fill:blueviolet!important;}
+
+.kcid3 line{stroke: red;}
+.kcid3 text{fill:red!important;}
+
+.kcid4 line{stroke: green;}
+.kcid4 text{fill:darkgreen!important;}
+
+.kcid5 line{stroke: brown;}
+.kcid5 text{fill:brown!important;}
+
 
 /* CSS for showing popup modal */
 .modal {

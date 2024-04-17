@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calls</title>
+</head>
+<body>
+    <h2>{{ pcapName }}</h2>
+    <form method="post" action="/filtered-calls">
+        <input type="submit" value="Submit">
+        <input type="hidden" name="pcap_name" value="{{ pcapName }}">
+        <table border="1">
+            <tr>
+              <th></th>
+              <th>Call ID</th>
+              <th>Start Time</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Status</th>
+              <th>Source</th>
+              <th>Destination</th>  
+            </tr>
+            {% for call_id, details in callFlows.items() %}
+            <tr class="selectable-row">
+              <td class="row-checkbox"><input type="checkbox" name="call_ids" value="{{ call_id }}"></td>
+              <td>{{ call_id }}</td>
+              <td>{{ details['time'] }}</td>
+              <td>{{ details['from'] }}</td>
+              <td>{{ details['to'] }}</td>
+              <td>{{ details['status'] }}</td>
+              <td>{{ details['src'] }}</td>
+              <td>{{ details['dst'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </form>
+
+
+
+
+</body>
+</html>
