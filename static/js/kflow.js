@@ -1,11 +1,15 @@
 let sipDictData = null
+let participants_orig = [];
+let participants = [];
+let k=0;
+
 fetch('/get_json?json='+ jsonName)
 .then(response => response.json())
 .then(data => {
     sipDictData = JSON.parse(data);
     // Use the data as needed
     fetchMediaInfo();
-    participants = participantsArrows();
+    participants=participantsArrows();
 });
 
 
@@ -169,7 +173,8 @@ function fetchMediaInfo(){
 
 function participantsArrows() {
     let actorElements = document.querySelectorAll(".actor");
-    let participants = [];
+    let rectIndx = 0;
+    let rectClasses = ['#E6B0AA', '#A9CCE3','#D7BDE2', '#F9E79F', '#A9DFBF', '#F5CBA7']
     actorElements.forEach(element => {
         const leftArrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
         const rightArrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
@@ -203,7 +208,28 @@ function participantsArrows() {
         if (!participants.includes(actor)) {
             participants.push(actor);
         }
+
+        let kIndx
+        if(k==0){
+            
+            kIndx = participants.indexOf(actor);
+        }
+        else{kIndx = participants_orig.indexOf(actor);}
+
+        kIndx = (kIndx) % rectClasses.length;
+        element.querySelector('rect').setAttribute('fill', rectClasses[kIndx]);
+        // console.log(rectIndx)
+
     });
+    
+    console.log(k)
+    if(k==0){
+        console.log('kiran'+k);
+        participants_orig=[...participants];
+        k+=1;
+    };
+    
+    console.log(participants_orig)
     return participants;
 };
 
@@ -226,7 +252,7 @@ function moveActor(polygon, direction){
 
     let actors = participants.map(actor => `participant "${actor}"`);
     umlDataNew = actors.join('\n') + '\n' + umlData;
-    console.log(umlDataNew)
+    // console.log(umlDataNew)
 
     document.getElementById('diagram').innerHTML = '';
     kpacketId = 1

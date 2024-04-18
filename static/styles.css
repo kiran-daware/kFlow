@@ -43,10 +43,10 @@ line {
 .note rect, .note path {
   fill: #ffff00;
 }
-.title rect, .title path,
+/* .title rect, .title path,
 .actor rect, .actor path {
   fill: #f5f5c5
-}
+} */
 
 .kcid1 line{stroke: orange}
 .kcid1 text{fill:orange!important;}

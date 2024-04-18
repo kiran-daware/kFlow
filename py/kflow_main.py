@@ -111,7 +111,7 @@ def extractCalls(pcap_filename):
 
 
 def generateCallFlowFilter(pcapFilename, displayFilter):
-
+    # load trackFilterPkl which stores trackFilter dictionary {displayFilter: fNo}
     trackFilterPkl = os.path.join(tmp_data, pcapFilename+'.f.pkl')
     if os.path.exists(trackFilterPkl):
         trackFilter = loadPickle(trackFilterPkl)
