@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Packet Summaries</title>
+</head>
+<body>
+    <h1>Packet Summaries</h1>
+    <table id="packet-table">
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Time</th>
+                <th>Source</th>
+                <th>Destination</th>
+                <th>Protocol</th>
+                <th>Length</th>
+                <th>Info</th>
+            </tr>
+        </thead>
+        <tbody id="packet-body">
+        </tbody>
+    </table>
+
+    <script>
+        var source = new EventSource('/stream_packets');
+        source.onmessage = function(event) {
+            var packet = JSON.parse(event.data);
+            var row = "<tr><td>" + packet.number + "</td><td>" + packet.time + "</td><td>" + packet.source + "</td><td>" + packet.dest + "</td><td>" + packet.protocol + "</td><td>" + packet.length + "</td><td>" + packet.info + "</td></tr>";
+            document.getElementById('packet-body').innerHTML += row;
+        };
+    </script>
+</body>
+</html>

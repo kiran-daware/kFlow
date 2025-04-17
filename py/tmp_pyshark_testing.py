@@ -7,15 +7,22 @@ data_path = os.path.abspath(os.path.join(base_dir, 'kflow_data'))
 tmp_data = os.path.abspath(os.path.join(data_path, 'tmp'))
 
 
-pcap_file_path=os.path.join(data_path, 'SIPCapture_Succ_01.pcap')
+# pcap_file_path=os.path.join(data_path, 'SIPmsg_2020_12_10_11_36_57.pcap')
 
-cap = pyshark.FileCapture(pcap_file_path)
-p=cap[38]
-sip=p.sip
+pcap_file_path=os.path.join(data_path, 'basic-call.pcapng')
+
+p = pyshark.FileCapture(pcap_file_path,
+                        only_summaries=True)
+p.load_packets()
+k = p[2]
+
+print(dir(k))
+print(k)
+
 # print(p.frame_info)
-# print(sip)
-if hasattr(sip, 'sdp_media'):
-    print(sip.sdp_media)
+
+# if hasattr(sip, 'sdp_media'):
+#     print(sip.sdp_media)
 # print(sip.from_addr)
 # print(sip.to_addr)
 # if hasattr(p.frame_info, 'time'):
@@ -27,7 +34,7 @@ if hasattr(sip, 'sdp_media'):
 #     if hasattr(packet.sip, 'status_code') and packet.sip.status_code == '200' and packet.sip.cseq_method == 'INVITE':
 #         print(packet.sip.cseq_method)
 
-print(sip.field_names)
+# print(sip.field_names)
 # if hasattr(sip, 'status_code'):
 #     print(sip.status_code)
 # # if 'Method' in p:
@@ -41,11 +48,11 @@ print(sip.field_names)
 # print(p.udp.srcport)
 
 
-packet_str = ""
+# packet_str = ""
 
-# Add frame_info
-packet_str += p.frame_info.__str__()
+# # Add frame_info
+# packet_str += p.frame_info.__str__()
 
-# Add other layers
-packet_str += p.__str__()
+# # Add other layers
+# packet_str += p.__str__()
 # print(packet_str)

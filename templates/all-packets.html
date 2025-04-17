@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calls</title>
+</head>
+<body>
+    <h2>{{ pcapName }}</h2>
+    <form method="post" action="/filtered-calls">
+        <input type="submit" value="Submit">
+        <input type="hidden" name="pcap_name" value="{{ pcapName }}">
+        <table>
+            <tr>
+              <th>No.</th>
+              <th>Time</th>
+              <th>Source</th>
+              <th>Destination</th>
+              <th>Protocol</th>
+              <th>Pkt Length</th>
+              <th>Info</th>  
+            </tr>
+            {% for packet in allPackets %}
+            <tr class="selectable-row">
+              <td>{{ packet['number'] }}</td>
+              <td>{{ packet['time'] }}</td>
+              <td>{{ packet['source'] }}</td>
+              <td>{{ packet['dest'] }}</td>
+              <td>{{ packet['protocol'] }}</td>
+              <td>{{ packet['length'] }}</td>
+              <td>{{ packet['info'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </form>
+
+
+
+
+</body>
+</html>

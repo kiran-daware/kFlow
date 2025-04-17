@@ -1,6 +1,7 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, Response, render_template, jsonify
 from py.kflow_main import uploadFile, listFiles, getJsonFile
-from py.kflow_main import generateCallFlowFilter, extractCalls
+from py.kflow_main import generateCallFlowFilter, extractCalls, allPacketSummaries
+from py.kflow_main import allPacketSummaries
 
 app = Flask(__name__)
 
@@ -13,6 +14,28 @@ def index():
 def upload():
     uploadResponse = uploadFile()
     return uploadResponse
+
+
+@app.route('/all-packets')
+def allPackets():
+    pcapName = 'SIPmsg_2020_12_10_11_36_57.pcap'
+    allPackets = allPacketSummaries(pcapName, 'sip')
+    return render_template('all-packets.html', allPackets = allPackets)
+
+
+
+@app.route('/stream_packets')
+def stream_packets():
+    def generate():
+        packet_stream = allPacketSummaries("SIPmsg_2020_12_10_11_36_57.pcap", 'sip')
+        for packet_summary in packet_stream:
+            yield "data: " + packet_summary + "\n\n"
+    return Response(generate(), mimetype='text/event-stream')
+
+
+@app.route('/packets')
+def packets():
+    return render_template('packets.html')
 
 
 @app.route('/calls')
@@ -59,34 +82,6 @@ def get_json():
     flowJson = getJsonFile(jsonName)
     return jsonify(flowJson)
 
-
-# @kFlow.route('/kflow')
-# def kflow():
-#     pcapName = request.args.get('pcapname')
-#     cidNo = request.args.get('cid-no')
-
-#     if pcapName is not None: 
-#         flowText = getFlowText(pcapName)
-#         loadCidList = load_list_from_pkl(pcapName+'.cid.pkl')
-#     else:
-#         return "Error: 'filename' parameter is missing from the URL"
-    
-#     if cidNo is not None:
-#         cidSr = int(cidNo) - 1
-#         flowText = generateFilterredCallIdFlow(pcapName, loadCidList[cidSr], cidSr)
-
-
-#     return render_template('kflow.html', flowText = flowText, pcapName = pcapName, loadCidList = loadCidList)
-
-
-# @kFlow.route('/get_json')
-# def get_json():
-#     pcapName = request.args.get('pcapname')
-#     if pcapName is None:
-#         return "Error: 'filename' parameter is missing from the URL"
-    
-#     flowJson = getJsonFile(pcapName)
-#     return jsonify(flowJson)
 
 
 

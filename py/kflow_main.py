@@ -60,13 +60,19 @@ def getJsonFile(jsonName):
 def extractCalls(pcap_filename):
     pklPath = os.path.join(tmp_data, pcap_filename+'.calls.pkl')
     if not os.path.exists(pklPath):
-        limitCalls = 500
+        limitCalls = 100
         # Open pcap file
         pcap_file_path=os.path.join(data_path, pcap_filename)
-        allCalls = pyshark.FileCapture(pcap_file_path, display_filter='sip.Method==INVITE')
+        allCalls = pyshark.FileCapture(pcap_file_path,
+                                       display_filter='sip.Method==INVITE',
+                                       keep_packets=False)
+        # allCalls.load_packets(timeout=2)
 
         succeessCallIdSet = set()
-        successCalls = pyshark.FileCapture(pcap_file_path, display_filter='sip.Status-Code == 200 && sip.CSeq.method == INVITE')
+        successCalls = pyshark.FileCapture(pcap_file_path,
+                                           display_filter='sip.Status-Code == 200 && sip.CSeq.method == INVITE',
+                                           keep_packets=False)
+        # successCalls.load_packets()
         limitCnt=0
         for p in successCalls:
             if limitCnt > limitCalls:
@@ -109,7 +115,6 @@ def extractCalls(pcap_filename):
 
 
 
-
 def generateCallFlowFilter(pcapFilename, displayFilter):
     # load trackFilterPkl which stores trackFilter dictionary {displayFilter: fNo}
     trackFilterPkl = os.path.join(tmp_data, pcapFilename+'.f.pkl')
@@ -132,7 +137,8 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
         pktNo = 1
         # Open pcap file
         pcap_file_path=os.path.join(data_path, pcapFilename)
-        fCap = pyshark.FileCapture(pcap_file_path, display_filter=displayFilter)
+        fCap = pyshark.FileCapture(pcap_file_path, display_filter=displayFilter, keep_packets=False,)
+        fCap.load_packets()
 
         with open(flowTxtPath, 'w') as file:
             file.write("")
@@ -148,6 +154,8 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
 
             with open(flowTxtPath, 'a') as file:
                 file.write(f"\n{src_ip}->{dst_ip} : {sip_msg}")
+            
+        fCap.close()
 
         # Convert dictionary to JSON string
         sip_json = json.dumps(sip_packets)
@@ -175,6 +183,27 @@ def getSrcDstMsg(packet):
 
 
 
+def allPacketSummaries(pcapName, displayFilter):
+    pcap_file_path=os.path.join(data_path, pcapName)
+    fCap = pyshark.FileCapture(pcap_file_path, display_filter=displayFilter,
+                               only_summaries=True)
+    # fCap.load_packets()
+    # allPackets = []
+    for p in fCap:
+        pkt_details = {
+                "number": p.no,
+                "time": p.time,
+                "source": p.source,
+                "dest": p.destination,
+                "protocol": p.protocol,
+                "length": p.length,
+                "info": p.info
+            }
+        # allPackets.append(pkt_details)
+
+        yield json.dumps(pkt_details).encode('utf-8')
+    fCap.close()
+    
 
 
 
