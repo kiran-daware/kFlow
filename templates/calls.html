@@ -37,7 +37,17 @@
     </form>
 
 
-
+    <script>
+      document.querySelectorAll('.selectable-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+          // Avoid toggling if clicking directly on the checkbox
+          if (e.target.tagName.toLowerCase() === 'input') return;
+    
+          const checkbox = this.querySelector('input[type="checkbox"]');
+          if (checkbox) checkbox.checked = !checkbox.checked;
+        });
+      });
+    </script>
 
 </body>
 </html>

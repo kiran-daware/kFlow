@@ -29,7 +29,7 @@ def kflow():
     pcapName = request.args.get('pcapname')
     if pcapName is not None:
         callFlows = extractCalls(pcapName)
-        if len(callFlows) < 5:
+        if len(callFlows) < 2:
             display_filter = 'sip'
             flowTxtPath, jsonName = generateCallFlowFilter(pcapName, display_filter)
             with open(flowTxtPath, 'r') as f:
