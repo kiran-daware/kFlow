@@ -18,24 +18,10 @@ def upload():
 
 @app.route('/all-packets')
 def allPackets():
-    pcapName = 'SIPmsg_2020_12_10_11_36_57.pcap'
+    pcapName = 'basic-call.pcapng'
     allPackets = allPacketSummaries(pcapName, 'sip')
     return render_template('all-packets.html', allPackets = allPackets)
 
-
-
-@app.route('/stream_packets')
-def stream_packets():
-    def generate():
-        packet_stream = allPacketSummaries("SIPmsg_2020_12_10_11_36_57.pcap", 'sip')
-        for packet_summary in packet_stream:
-            yield "data: " + packet_summary + "\n\n"
-    return Response(generate(), mimetype='text/event-stream')
-
-
-@app.route('/packets')
-def packets():
-    return render_template('packets.html')
 
 
 @app.route('/calls')

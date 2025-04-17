@@ -187,8 +187,8 @@ def allPacketSummaries(pcapName, displayFilter):
     pcap_file_path=os.path.join(data_path, pcapName)
     fCap = pyshark.FileCapture(pcap_file_path, display_filter=displayFilter,
                                only_summaries=True)
-    # fCap.load_packets()
-    # allPackets = []
+    fCap.load_packets()
+    allPackets = []
     for p in fCap:
         pkt_details = {
                 "number": p.no,
@@ -199,10 +199,20 @@ def allPacketSummaries(pcapName, displayFilter):
                 "length": p.length,
                 "info": p.info
             }
-        # allPackets.append(pkt_details)
-
-        yield json.dumps(pkt_details).encode('utf-8')
+        allPackets.append(pkt_details)
     fCap.close()
+    return allPackets
+
+
+
+
+
+
+
+
+
+
+
     
 
 
