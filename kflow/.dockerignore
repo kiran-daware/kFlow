@@ -1,0 +1,9 @@
+# Ignore the virtual environment folder
+venv/
+__pycache/
+
+# You can also ignore other files or directories that aren't necessary for Docker, such as:
+.git/
+*.pyc
+*.pyo
+

@@ -1,7 +1,7 @@
 from flask import Flask, request, Response, render_template, jsonify
-from py.kflow_main import uploadFile, listFiles, getJsonFile
-from py.kflow_main import generateCallFlowFilter, extractCalls, allPacketSummaries
-from py.kflow_main import allPacketSummaries
+from kflow.py.kflow_main import uploadFile, listFiles, getJsonFile
+from kflow.py.kflow_main import generateCallFlowFilter, extractCalls, allPacketSummaries
+from kflow.py.kflow_main import allPacketSummaries
 
 app = Flask(__name__)
 
