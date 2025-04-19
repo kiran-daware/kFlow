@@ -1,4 +1,5 @@
-import os, pyshark
+import os, pyshark, json
+from kflow_main import getSrcDstMsg
 
 # Get the directory of the current Python file, base dir of flask and kflow_data dir
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -12,14 +13,17 @@ tmp_data = os.path.abspath(os.path.join(data_path, 'tmp'))
 pcap_file_path=os.path.join(data_path, 'basic-call.pcapng')
 
 p = pyshark.FileCapture(pcap_file_path,
-                        only_summaries=True)
+                        only_summaries=False)
 p.load_packets()
-k = p[2]
+k = p[3]
+# print(str(k.frame_info) + str(k) )
+# print("======================================")
+# print(k.pretty_print())
 
-print(dir(k))
-print(k)
+# print(dir(k.sip))
+# print(k.sip.get_field_value('status-code'))
 
-# print(p.frame_info)
+# print(k.sip)
 
 # if hasattr(sip, 'sdp_media'):
 #     print(sip.sdp_media)
