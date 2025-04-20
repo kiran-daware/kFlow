@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calls</title>
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<!-- jQuery (required by DataTables) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- colResizable plugin -->
+<script src="https://cdn.jsdelivr.net/npm/colresizable@1.6.0/colResizable-1.6.min.js"></script>
+
+
 </head>
 <body>
     <h2>{{ pcapName }}</h2>
@@ -12,47 +23,81 @@
       <li>Total number of call legs: {{ callFlows|length }}</li>
     </ul>
 
-    <form method="post" action="/filtered-calls">
-        <input type="submit" value="Submit">
-        <input type="hidden" name="pcap_name" value="{{ pcapName }}">
-        <table border="1">
-            <tr>
-              <th></th>
-              <th>Call ID</th>
-              <th>Start Time</th>
-              <th>Source</th>
-              <th>Destination</th>  
-              <th>From</th>
-              <th>To</th>
-              <th>Status</th>
-            </tr>
-            {% for call_id, details in callFlows.items() %}
-            <tr class="selectable-row">
-              <td class="row-checkbox"><input type="checkbox" name="call_ids" value="{{ call_id }}"></td>
-              <td>{{ call_id }}</td>
-              <td>{{ details['time'] }}</td>
-              <td>{{ details['src'] }}</td>
-              <td>{{ details['dst'] }}</td>
-              <td>{{ details['from'] }}</td>
-              <td>{{ details['to'] }}</td>
-              <td>{{ details['status'] }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </form>
+
+  <form method="post" action="/filtered-calls">
+    <input type="submit" value="Submit">
+    <input type="hidden" name="pcap_name" value="{{ pcapName }}">
+    <table id="call-table" class="display order-column stripe cell-border hover">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Call ID</th>
+          <th>Start Time</th>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for call_id, details in callFlows.items() %}
+        <tr class="selectable-row">
+          <td class="row-checkbox"><input type="checkbox" name="call_ids" value="{{ call_id }}"></td>
+          <td>{{ call_id }}</td>
+          <td>{{ details['time'] }}</td>
+          <td>{{ details['src'] }}</td>
+          <td>{{ details['dst'] }}</td>
+          <td>{{ details['from'] }}</td>
+          <td>{{ details['to'] }}</td>
+          <td>{{ details['status'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
 
 
     <script>
-      document.querySelectorAll('.selectable-row').forEach(row => {
-        row.addEventListener('click', function(e) {
-          // Avoid toggling if clicking directly on the checkbox
-          if (e.target.tagName.toLowerCase() === 'input') return;
-    
-          const checkbox = this.querySelector('input[type="checkbox"]');
-          if (checkbox) checkbox.checked = !checkbox.checked;
+      $(document).ready(function () {
+        $('#call-table').DataTable({
+          autoWidth: true,
+          paging: true,
+          searching: true,
+          ordering: true,
+          order: [[2, 'desc']],
+          info: true,
+          columnDefs: [
+            { orderable: false, targets: 0 }, // prevent checkbox column from being sorted
+          ],
+
+        });
+
+
+          // Add column resizing after DataTable has rendered
+        
+        $('#call-table').colResizable({
+          liveDrag: true,
+          gripInnerHtml: "<div class='grip'></div>",
+          draggingClass: "dragging",
+          resizeMode: 'fit'
+        }); 
+
+
+
+        // Row click toggles checkbox
+        $('#call-table').on('click', 'tr.selectable-row', function (e) {
+          if (!$(e.target).is('input')) {
+            const checkbox = $(this).find('input[type="checkbox"]');
+            checkbox.prop('checked', !checkbox.prop('checked'));
+          }
         });
       });
     </script>
+    
+
+
 
 </body>
 </html>

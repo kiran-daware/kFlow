@@ -80,3 +80,18 @@ line {
   cursor: pointer;}
 .k-headers {color:#567891;}
 .k-sip {color:#bb6611;}
+
+
+
+.grip {
+  background: #ccc;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.dragging {
+  background-color: rgba(0, 0, 0, 0.89);
+}
+
+
