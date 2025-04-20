@@ -1,7 +1,8 @@
 from flask import request, jsonify
-import pyshark
-import json, re
+import re
+import ujson as json
 import os
+from .tshark_extract import tshark_extract
 
 # Get the directory of the current Python file, base dir of flask and kflow_data dir
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -56,92 +57,92 @@ def loadFromJson(path):
         return json.load(f)
 
 def extractCalls(pcap_filename):
+
     jsonPath = os.path.join(tmp_data, pcap_filename + '.calls.json')
     if os.path.exists(jsonPath):
-        try:
-            return loadFromJson(jsonPath)
-        except Exception as e:
-            print(f"Failed to load JSON cache: {e}")
+        return loadFromJson(jsonPath)
 
-    limitCalls = 100
-    pcap_file_path = os.path.join(data_path, pcap_filename)
+    pcap_path = os.path.join(data_path, pcap_filename)
+    limitCalls = 200
+    noOfCalls = 0
+    call_flows = {}
 
-    # Parse all SIP packets at once
-    sip_packets = pyshark.FileCapture(
-        pcap_file_path,
-        display_filter='(sip) && !(sip.CSeq.method == "REGISTER") && !(sip.CSeq.method == "OPTIONS")',
-        # display_filter ='sip',
-        keep_packets=False
+    # Define tshark fields to extract
+    fields = [
+        "frame.time",
+        "ip.src", "udp.srcport", "tcp.srcport",
+        "ip.dst", "udp.dstport", "tcp.dstport",
+        "sip.Call-ID",
+        "sip.from.addr",
+        "sip.to.addr",
+        "sip.Method",
+        "sip.Status-Code",
+        "sip.CSeq.method"
+    ]
+
+    # Use your reusable tshark extractor
+    packets = tshark_extract(
+        pcap_path,
+        fields=fields,
+        display_filter='sip && !(sip.CSeq.method == "REGISTER") && !(sip.CSeq.method == "OPTIONS")'
     )
 
-    call_flows = {}
-    noOfCalls = 0
+    for pkt in packets:
+        call_id = pkt.get("sip.Call-ID")
+        if not call_id:
+            continue
 
-    for pkt in sip_packets:
-        try:
-            sip = pkt.sip
-            cSeqMethod = sip.get_field_value('CSeq_method')
-            requestMethod = sip.get_field_value('Method')
-            statusCode = sip.get_field_value('Status-Code')
-            call_id = sip.get_field_value('Call-ID')
-            src_ip = f'{pkt.ip.src}:{pkt[pkt.transport_layer].srcport}'
+        method = pkt.get("sip.Method")
+        status = pkt.get("sip.Status-Code")
+        cseq_method = pkt.get("sip.CSeq.method")
+        src_ip_port = pkt.get("ip.src") + ":" + pkt.get('udp.srcport') or pkt.get('tcp.srcport')
+        dst_ip_port = pkt.get("ip.dst") + ":" + pkt.get('udp.dstport') or pkt.get('tcp.dstport')
+        frame_time = pkt.get("frame.time")
 
-            # Track INVITE calls
-            if requestMethod == "INVITE" and call_id not in call_flows:
-                if noOfCalls >= limitCalls:
-                    print(f'Too Many Calls! More than {limitCalls} !!! some last calls may not have been completely analysed')
-                    break
+        if method == "INVITE" and call_id not in call_flows:
+            if noOfCalls >= limitCalls:
+                print(f"Too Many Calls! Limit of {limitCalls} exceeded.")
+                break
 
-                fromAddr = sip.get_field_value('from.addr')
-                toAddr = sip.get_field_value('to.addr')
-                startTime = pkt.frame_info.time
-                # src_ip = f'{pkt.ip.src}:{pkt[pkt.transport_layer].srcport}'
-                dst_ip = f'{pkt.ip.dst}:{pkt[pkt.transport_layer].dstport}'
+            call_flows[call_id] = {
+                'time': frame_time,
+                'src': src_ip_port,
+                'dst': dst_ip_port,
+                'from': pkt.get("sip.from.addr"),
+                'to': pkt.get("sip.to.addr"),
+                'status': '',
+                'comments': '-INVITE->'
+            }
+            noOfCalls += 1
+            continue
 
+        if call_id in call_flows:
+            comment = method or status or ""
+            if call_flows[call_id]['src'] == src_ip_port:
+                comment = f"-{comment}->"
+            elif call_flows[call_id]['dst'] == src_ip_port:
+                comment = f"<-{comment}-"
+            call_flows[call_id]['comments'] += "  " + comment
 
-                call_flows[call_id] = {
-                    'time': startTime,
-                    'src': src_ip,
-                    'dst': dst_ip,
-                    'from': fromAddr,
-                    'to': toAddr,
-                    'status': '',
-                    'comments': '-Invite->',
-                }
-                noOfCalls += 1
-                continue
+            if status and cseq_method == "INVITE":
+                call_flows[call_id]['status'] = status
 
-            if call_id in call_flows:
-                comment = requestMethod if requestMethod else statusCode if statusCode else ''
-                if call_flows[call_id]['src'] == src_ip:
-                    comment = "-"+comment+"->"
-                elif call_flows[call_id]['dst'] == src_ip:
-                    comment = "<-"+comment+"-"
-                call_flows[call_id]['comments'] += "  " +comment
-
-
-            # Track successful calls
-            if  statusCode and call_id in call_flows and cSeqMethod == "INVITE":
-                call_flows[call_id]['status'] = statusCode
-                continue
-
-            if statusCode == "200" and cSeqMethod == "BYE" and call_id in call_flows:
+            if status == "200" and cseq_method == "BYE":
                 call_flows[call_id]['status'] = "Completed"
-                continue
-
-        except AttributeError:
-            continue  # Malformed or irrelevant packet
 
 
-    sip_packets.close()
+    # Cache result to json
     saveToJson(call_flows, jsonPath)
 
     return call_flows
 
 
 
+
+
+
 def generateCallFlowFilter(pcapFilename, displayFilter):
-    # Load or initialize trackFilter dictionary
+    # Track filter usage
     trackFilterJson = os.path.join(tmp_data, pcapFilename + '.f.json')
     trackFilter = loadFromJson(trackFilterJson) if os.path.exists(trackFilterJson) else {}
 
@@ -154,67 +155,101 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
     jsonName = f"{pcapFilename}.f{fNo}.json"
     sipJsonPath = os.path.join(tmp_data, jsonName)
 
-    # Only process if data isn't already cached
-    if not os.path.exists(flowTxtPath) or not os.path.exists(sipJsonPath):
-        sip_packets = {}
-        
-        pcap_file_path = os.path.join(data_path, pcapFilename)
-        fCap = pyshark.FileCapture(
-            pcap_file_path,
-            display_filter=displayFilter,
-            keep_packets=False
-        )
-        fCap.load_packets()
+    # Skip if already cached
+    if os.path.exists(flowTxtPath) and os.path.exists(sipJsonPath):
+        return flowTxtPath, jsonName
 
-        with open(flowTxtPath, 'w') as txt_file:
-            for pktNo, p in enumerate(fCap, start=1):
-                sip_packets[pktNo] = str(p)
-                src_ip, dst_ip, sip_msg = getSrcDstMsg(p)
-                txt_file.write(f"\n{src_ip}->{dst_ip} : {sip_msg}")
+    pcap_file_path = os.path.join(data_path, pcapFilename)
 
-        fCap.close()
+    # Run tshark to get essential fields
+    fields = [
+        # General frame info
+        "frame.number",
+        "frame.time",
+        "frame.len",
 
-        with open(sipJsonPath, 'w') as json_file:
-            json.dump(sip_packets, json_file, indent=2)
+        # Network layer
+        "ip.src", "ip.dst",
+
+        # Transport layer
+        "udp.srcport", "udp.dstport",
+        "tcp.srcport", "tcp.dstport",
+
+        # SIP protocol fields
+        "sip.Method",
+        "sip.Status-Code",
+        "sip.CSeq",
+        "sip.CSeq.method",
+        "sip.Call-ID",
+        "sip.from.addr",
+        "sip.to.addr",
+        "sip.Contact",
+        "sip.User-Agent",
+        "sip.Via",
+        "sip.Request-Line",
+
+        # SDP fields (media/session negotiation)
+        "sdp.connection_info",
+        "sdp.media",
+        "sdp.session_name",
+        "sdp.owner",
+    ]
+
+    packets = tshark_extract(pcap_file_path, fields, display_filter=displayFilter)
+    print("here")
+    sip_packets = {}
+    with open(flowTxtPath, 'w') as txt_file:
+        for i, pkt in enumerate(packets, start=1):
+
+            sip_packets[i] = pkt
+
+            src_ip_port = pkt.get("ip.src") + ":" + pkt.get('udp.srcport') or pkt.get('tcp.srcport')
+            dst_ip_port = pkt.get("ip.dst") + ":" + pkt.get('udp.dstport') or pkt.get('tcp.dstport')
+
+            # Reconstruct basic SIP message summary
+            method = pkt.get("sip.Method")
+            status = pkt.get("sip.Status-Code")
+            msg = method if method else status if status else "Unknown"
+
+            txt_file.write(f'\n"{src_ip_port}"->"{dst_ip_port}" : {msg}')
+
+    # Save all packets to JSON
+    with open(sipJsonPath, 'w') as json_file:
+        json.dump(sip_packets, json_file, indent=2)
 
     return flowTxtPath, jsonName
 
 
-
-def getSrcDstMsg(packet):
-    src_ip = f'"{packet.ip.src}:{packet[packet.transport_layer].srcport}"'
-    dst_ip = f'"{packet.ip.dst}:{packet[packet.transport_layer].dstport}"'
-    sip = packet.sip
-    if hasattr(sip, 'request_line'):
-        request_line = sip.request_line
-        sip_msg = request_line.split()[0]
-    elif hasattr(sip, 'status_line'):
-        status_line = sip.status_line
-        status_code, reason_phrase = status_line.split(maxsplit=2)[1:]
-        sip_msg = status_code +" "+ reason_phrase
-
-    return src_ip, dst_ip, sip_msg
-
-
-
 def allPacketSummaries(pcapName, displayFilter):
-    pcap_file_path=os.path.join(data_path, pcapName)
-    fCap = pyshark.FileCapture(pcap_file_path, display_filter=displayFilter,
-                               only_summaries=True)
-    fCap.load_packets()
-    allPackets = []
-    for p in fCap:
-        pkt_details = {
-                "number": p.no,
-                "time": p.time,
-                "source": p.source,
-                "dest": p.destination,
-                "protocol": p.protocol,
-                "length": p.length,
-                "info": p.info
-            }
-        allPackets.append(pkt_details)
-    fCap.close()
-    return allPackets
+    pcap_file_path = os.path.join(data_path, pcapName)
+    
+    # These fields match pyshark's summary fields
+    fields = [
+        "frame.number",
+        "frame.time",
+        "ip.src",
+        "ip.dst",
+        "frame.protocols",
+        "frame.len",
+        "frame"
+    ]
+    
+    # Use your existing tshark_extract function
+    raw_packets = tshark_extract(pcap_file_path, fields, display_filter=displayFilter)
 
+    # Map extracted packets into summary-style dicts
+    allPackets = []
+    for pkt in raw_packets:
+        pkt_details = {
+            "number": pkt.get("frame.number"),
+            "time": pkt.get("frame.time"),
+            "source": pkt.get("ip.src"),
+            "dest": pkt.get("ip.dst"),
+            "protocol": pkt.get("frame.protocols"),
+            "length": pkt.get("frame.len"),
+            "info": pkt.get("frame.info")
+        }
+        allPackets.append(pkt_details)
+
+    return allPackets
 

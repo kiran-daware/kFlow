@@ -7,8 +7,9 @@ fetch('/get_json?json='+ jsonName)
 .then(response => response.json())
 .then(data => {
     sipDictData = JSON.parse(data);
+    colorForEachCallId();
     // Use the data as needed
-    fetchMediaInfo();
+    // fetchMediaInfo();
     participants=participantsArrows();
 });
 
@@ -22,8 +23,10 @@ function extractNumbers(str) {
 function showMore(id) {
     kpacketId=5
     nid=extractNumbers(id)
-    // console.log(sipDictData[nid])
-    let pktContent=convertAnsiToHtml(sipDictData[nid]);
+    console.log(sipDictData[nid])
+    packet_data = sipDictData[nid]
+    // let pktContent=convertAnsiToHtml(sipDictData[nid]);
+    pktContent = `<pre>${JSON.stringify(packet_data, null, 2)}</pre>`;
     document.getElementById("popup-content").innerHTML = pktContent;
     document.getElementById("popup-modal").style.display = "block";
     collapseSipLayers();
@@ -32,48 +35,6 @@ function closePopup() {
     // Hide the modal
     document.getElementById("popup-modal").style.display = "none";
 }
-
-
-
-// Conver ANSI to HTML
-function convertAnsiToHtml(text) {
-    let escapedText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // Regular expression to match ANSI escape codes and text between them
-    let ansiEscapeRegex = /\x1B\[1m(\x1B\[\d{1,2}m)([\s\S]*?)(\x1B\[0m)/g
-    let ktext = escapedText.replace(ansiEscapeRegex, '$1$2$3')
-    
-    let ansiRegex = /\x1B\[(\d{1,2})m([\s\S]*?)\x1B\[0m/g;
-    
-    // Replace ANSI escape codes and text between them with HTML/CSS styling
-    ansidecoded = ktext.replace(ansiRegex, function(match, code, text) {
-        // Determine CSS styling based on ANSI escape codes
-        code = parseInt(code);
-        let kClass = '';
-        switch (code) {
-            // case 1: // Bold
-            //     style = 'font-weight: bold;';
-            //     break;
-            case 33: // Yellow
-                kClass = 'k-layers';
-                break;
-            case 32: // green
-                kClass = 'k-headers';
-                break;
-            // Add more cases for other ANSI escape codes as needed
-            default:
-                kClass = 'k-values'
-                break;
-        }
-    
-        // Wrap matched text with span and apply style
-        return '<span class="' + kClass + '">' + text + '</span>';
-    });
-    
-    ansidecoded=ansidecoded.replace(/\n:/g, " :\n");
-    let reForSipHeader = /(\t*)(Message Header|Message Body)/g;
-
-    return ansidecoded.replace(reForSipHeader, '<span class="k-sip">$2</span>');
-};
 
 
 // to make collapsible sip layers
@@ -107,13 +68,63 @@ function collapseSipLayers(){
 
 
 
-// ************* to fetch media line info
+// ************* different color according to call_id
+
+
+function generateColorClass(index, callIdClassMap) {
+    const hue = (index * 137.508) % 360;  // Using golden angle for good distribution
+    const color = `hsl(${hue}, 70%, 60%)`;
+    const className = `kcid${index}`;
+
+    // Inject dynamic style if not already added
+    if (!callIdClassMap[className]) {
+        const style = document.createElement("style");
+        style.innerHTML = `.${className} line{stroke: ${color};}`;
+        document.head.appendChild(style);
+        callIdClassMap[className] = true; // Mark as injected
+    }
+
+    return className;
+}
+
+
+function colorForEachCallId() {
+    const signalElements = document.querySelectorAll(".signal");
+    const callIdToClass = {};
+    const injectedStyles = {};
+    let currIndex = 1;
+
+    signalElements.forEach(element => {
+        const id = element.id;
+        const nid = extractNumbers(id);
+        const pkt = sipDictData[nid];
+
+        if (!pkt || typeof pkt !== "object") return;
+
+        const callIdRaw = pkt["sip.Call-ID"];
+        if (!callIdRaw) return;
+
+        const callId = callIdRaw.replace(/\x1b\[[0-9;]*m/g, '').trim();
+
+        if (!(callId in callIdToClass)) {
+            callIdToClass[callId] = generateColorClass(currIndex, injectedStyles);
+            currIndex++;
+        }
+
+        const className = callIdToClass[callId];
+        element.classList.add(className);
+    });
+}
+
+
+
 
 function fetchMediaInfo(){
     let signalElements = document.querySelectorAll(".signal");
     let currIndx = 0;
     let callIdClass = {};
     let kClass = ["kcid1", "kcid2", "kcid3", "kcid4", "kcid5"];
+    
 
     signalElements.forEach(element => {
         // Get the ID of the current element
@@ -210,26 +221,23 @@ function participantsArrows() {
         }
 
         let kIndx
-        if(k==0){
-            
+        if(k==0){            
             kIndx = participants.indexOf(actor);
         }
         else{kIndx = participants_orig.indexOf(actor);}
 
         kIndx = (kIndx) % rectClasses.length;
         element.querySelector('rect').setAttribute('fill', rectClasses[kIndx]);
-        // console.log(rectIndx)
 
     });
     
-    console.log(k)
+    // console.log(k)
     if(k==0){
-        console.log('kiran'+k);
         participants_orig=[...participants];
+        console.log(participants_orig)
         k+=1;
     };
-    
-    console.log(participants_orig)
+
     return participants;
 };
 
@@ -259,7 +267,8 @@ function moveActor(polygon, direction){
     diagram = Diagram.parse(umlDataNew);
     diagram.drawSVG('diagram', {theme: 'simple'});
 
-    fetchMediaInfo();
+    // fetchMediaInfo();
+    colorForEachCallId();
     participants = participantsArrows();
 
 };
