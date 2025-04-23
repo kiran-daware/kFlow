@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calls</title>
 <!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-<!-- jQuery (required by DataTables) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-<!-- colResizable plugin -->
-<script src="https://cdn.jsdelivr.net/npm/colresizable@1.6.0/colResizable-1.6.min.js"></script>
-
+<link href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css" rel="stylesheet" integrity="sha384-ZVBvXH2IGOw6fHIntvmU2wOUGWutDViMwSQwdGEvaJkHVvm1S8N/HE/zBK91NXSV" crossorigin="anonymous">
+<link href="https://cdn.datatables.net/buttons/3.2.2/css/buttons.dataTables.css" rel="stylesheet" integrity="sha384-WnU9UKIFykmC5nUngG4IGkdl3+/E5Rx7JmiggfjyAY804EuDkGcxL4aJMdN5iuTJ" crossorigin="anonymous">
+<link href="https://cdn.datatables.net/fixedheader/4.0.1/css/fixedHeader.dataTables.css" rel="stylesheet" integrity="sha384-63Mv1JvQ0dybFXkzVnkoPv/pNrcKHYBp3CEc+FLGR2jWxMRz42UfRpoSc7mof/C4" crossorigin="anonymous">
+ 
+<script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha384-ogycHROOTGA//2Q8YUfjz1Sr7xMOJTUmY2ucsPVuXAg4CtpgQJQzGZsX768KqetU" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/2.2.2/js/dataTables.js" integrity="sha384-gGekiWQ/bm8p71RTsvhPShoIBxcf8BsVjRTi0WY8FvxuQa2nKS0PKHiSXV9nfW/A" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/dataTables.buttons.js" integrity="sha384-wCLG3FbyFPnMZM65D+pam9KW+2joK88dh4jfSMK0OuMQ2cBQHV0t55OqmQduaQ1S" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.colVis.js" integrity="sha384-i6Z7TESDTMWWMiPn4glNtpuvZKnfRC8IRXtzYgtiFgpuLgRPoUyRO4uJJ8H22IyH" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.html5.js" integrity="sha384-r5RumiuQhALaYWd8i8v0DxCjEXRayyj6nl1wP379+GexLAvE4yuLNoyPEvE6hzDu" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/fixedheader/4.0.1/js/dataTables.fixedHeader.js" integrity="sha384-OoxvLxESIu5jcpOCEZKtEwi9qSMqzICOeIU1p993dTvbtk7/yp69NojbtKY0ejmf" crossorigin="anonymous"></script>
 
 </head>
 <body>
@@ -71,18 +72,42 @@
           columnDefs: [
             { orderable: false, targets: 0 }, // prevent checkbox column from being sorted
           ],
+          fixedHeader: {
+            header: true,
+            footer: false
+          },
+          layout: {
+            topStart: {
+              buttons: [
+                {
+                  extend: 'colvis',
+                  text: 'Filter columns', // Custom label
+                  columns: ':not(:first-child)' // Exclude 1st column (checkbox)
+                },
+                {
+                  extend: 'csv',
+                  text: 'Export to CSV',
+                  exportOptions: {
+                    columns: ':not(:first-child)' // Exclude 1st column from export too
+                  }
+                }
+              ]
+            },
+            topEnd: {
+              search: {
+                placeholder: 'Search table...'
+              }
+            },
+            bottomStart: {
+              info: true
+            },
+            bottomEnd: {
+              pageLength: true, 
+              paging: true
+            }
+          }
 
         });
-
-
-          // Add column resizing after DataTable has rendered
-        
-        $('#call-table').colResizable({
-          liveDrag: true,
-          gripInnerHtml: "<div class='grip'></div>",
-          draggingClass: "dragging",
-          resizeMode: 'fit'
-        }); 
 
 
 
