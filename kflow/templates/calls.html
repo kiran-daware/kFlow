@@ -31,27 +31,33 @@
     <table id="call-table" class="display order-column stripe cell-border hover">
       <thead>
         <tr>
-          <th></th>
-          <th>Call ID</th>
+          <th>.</th>          
           <th>Start Time</th>
           <th>Source</th>
           <th>Destination</th>
+          <th>DialedNumber</th>
+          <th>Status</th>
           <th>From</th>
           <th>To</th>
-          <th>Status</th>
+          <th>Call ID</th>
+          <th>Events</th>            
+          
         </tr>
       </thead>
       <tbody>
         {% for call_id, details in callFlows.items() %}
         <tr class="selectable-row">
-          <td class="row-checkbox"><input type="checkbox" name="call_ids" value="{{ call_id }}"></td>
-          <td>{{ call_id }}</td>
-          <td>{{ details['time'] }}</td>
+          <td class="row-checkbox"><input type="checkbox" name="call_ids" value="{{ call_id }}"></td>          
+          <td>{{ details['start_time'] }}</td>
           <td>{{ details['src'] }}</td>
           <td>{{ details['dst'] }}</td>
+          <td>{{ details['dialed_no'] }}</td>
+          <td>{{ details['status'] }}</td>
           <td>{{ details['from'] }}</td>
           <td>{{ details['to'] }}</td>
-          <td>{{ details['status'] }}</td>
+          <td>{{ call_id }}</td>
+          <td>{{ details['events'] }}</td>
+          
         </tr>
         {% endfor %}
       </tbody>
@@ -67,7 +73,7 @@
           paging: true,
           searching: true,
           ordering: true,
-          order: [[2, 'desc']],
+          order: [[1, 'desc']],
           info: true,
           columnDefs: [
             { orderable: false, targets: 0 }, // prevent checkbox column from being sorted

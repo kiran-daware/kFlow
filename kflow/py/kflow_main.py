@@ -63,7 +63,7 @@ def extractCalls(pcap_filename):
         return loadFromJson(jsonPath)
 
     pcap_path = os.path.join(data_path, pcap_filename)
-    limitCalls = 200
+    limitCalls = 10000
     noOfCalls = 0
     call_flows = {}
 
@@ -76,6 +76,7 @@ def extractCalls(pcap_filename):
         "sip.from.addr",
         "sip.to.addr",
         "sip.Method",
+        "sip.r-uri.user",
         "sip.Status-Code",
         "sip.CSeq.method"
     ]
@@ -105,24 +106,26 @@ def extractCalls(pcap_filename):
                 break
 
             call_flows[call_id] = {
-                'time': frame_time,
+                'start_time': frame_time.rsplit(' ', 1)[0],
                 'src': src_ip_port,
                 'dst': dst_ip_port,
                 'from': pkt.get("sip.from.addr"),
                 'to': pkt.get("sip.to.addr"),
+                'dialed_no': pkt.get("sip.r-uri.user"),
                 'status': '',
-                'comments': '-INVITE->'
+                'duration': '',
+                'events': '(o)INVITE'
             }
             noOfCalls += 1
             continue
 
         if call_id in call_flows:
-            comment = method or status or ""
+            event = method or status or ""
             if call_flows[call_id]['src'] == src_ip_port:
-                comment = f"-{comment}->"
+                event = f"(o){event}"
             elif call_flows[call_id]['dst'] == src_ip_port:
-                comment = f"<-{comment}-"
-            call_flows[call_id]['comments'] += "  " + comment
+                event = f"(+){event}"
+            call_flows[call_id]['events'] +="_" + event
 
             if status and cseq_method == "INVITE":
                 call_flows[call_id]['status'] = status

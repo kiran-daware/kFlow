@@ -46,3 +46,32 @@ def tshark_extract(pcap_path, fields, display_filter="sip", limit=None):
         print(f"[tshark_extract] Error running tshark: {e.stderr}")
         return []
 
+
+
+# fields = [
+#     "frame.time",
+#     "ip.src", "udp.srcport", "tcp.srcport",
+#     "ip.dst", "udp.dstport", "tcp.dstport",
+#     "sip.Call-ID",
+#     "sip.from.addr",
+#     "sip.to.addr",
+#     "sip.Method",
+#     "sip.r-uri",
+#     "sip.Status-Code",
+#     "sip.CSeq.method"
+# ]
+
+
+# # Use your reusable tshark extractor
+# packets = tshark_extract(
+#     "/home/kiran/kgit/kFlow/kflow/kflow_data/basic-call.pcapng",
+#     fields=fields,
+#     display_filter='sip && !(sip.CSeq.method == "REGISTER") && !(sip.CSeq.method == "OPTIONS")'
+# )
+
+# # print(packets[0])
+
+
+
+
+
