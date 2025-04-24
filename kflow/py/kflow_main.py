@@ -2,6 +2,7 @@ from flask import request, jsonify
 import re
 import ujson as json
 import os
+from datetime import datetime
 from .tshark_extract import tshark_extract
 
 # Get the directory of the current Python file, base dir of flask and kflow_data dir
@@ -66,14 +67,15 @@ def extractCalls(pcap_filename):
     limitCalls = 10000
     noOfCalls = 0
     call_flows = {}
+    status_counter = {}
 
     # Define tshark fields to extract
     fields = [
-        "frame.time",
+        "frame.time", "frame.time_epoch",
         "ip.src", "udp.srcport", "tcp.srcport",
         "ip.dst", "udp.dstport", "tcp.dstport",
         "sip.Call-ID",
-        "sip.from.addr",
+        "sip.from.addr","sip.from.user",
         "sip.to.addr",
         "sip.Method",
         "sip.r-uri.user",
@@ -107,14 +109,19 @@ def extractCalls(pcap_filename):
 
             call_flows[call_id] = {
                 'start_time': frame_time.rsplit(' ', 1)[0],
+                'start_time_epoch': float(pkt.get("frame.time_epoch")), #internal field
                 'src': src_ip_port,
                 'dst': dst_ip_port,
                 'from': pkt.get("sip.from.addr"),
                 'to': pkt.get("sip.to.addr"),
+                'from_no': pkt.get("sip.from.user"),
                 'dialed_no': pkt.get("sip.r-uri.user"),
                 'status': '',
+                'answer_time': '',
+                'end_time': '',
                 'duration': '',
-                'events': '(o)INVITE'
+                'events': '(o)INVITE',
+                
             }
             noOfCalls += 1
             continue
@@ -128,10 +135,36 @@ def extractCalls(pcap_filename):
             call_flows[call_id]['events'] +="_" + event
 
             if status and cseq_method == "INVITE":
-                call_flows[call_id]['status'] = status
+                if status == "200":
+                    call_flows[call_id]['status'] = "Answered"
+                    status_counter["Answered"] = status_counter.get("Answered", 0) + 1
+                    call_flows[call_id]['answer_time'] = frame_time.rsplit(' ', 1)[0]
+
+                elif status.startswith("3"):
+                    call_flows[call_id]['status'] = "Redirected" + status
+                    status_counter["Redirected"] = status_counter.get("Redirected", 0) + 1
+
+                elif status.startswith("4") or status.startswith("5") or status.startswith("6"):
+                    failed_label = "Failed " + status
+                    call_flows[call_id]['status'] = failed_label 
+                    status_counter[failed_label] = status_counter.get(failed_label, 0) + 1
+                    status_counter["Total_Failed"] = status_counter.get("Total_Failed", 0) + 1
+
+                else: 
+                    call_flows[call_id]['status'] = status
+                    status_counter[status] = status_counter.get(status, 0) + 1
+            
+                continue
 
             if status == "200" and cseq_method == "BYE":
                 call_flows[call_id]['status'] = "Completed"
+                status_counter["Completed"] = status_counter.get("Completed", 0) + 1
+                call_flows[call_id]['end_time'] = frame_time.rsplit(' ', 1)[0]
+                thisTimeEpoch = float(pkt.get("frame.time_epoch"))
+                inviteTimeEpoch = call_flows[call_id]['start_time_epoch']               
+                duration = datetime.fromtimestamp(thisTimeEpoch) - datetime.fromtimestamp(inviteTimeEpoch)
+                call_flows[call_id]['duration'] = str(duration)
+                continue
 
 
     # Cache result to json
