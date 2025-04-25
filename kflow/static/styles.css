@@ -75,23 +75,26 @@ line {
   width: 80%; /* Could be more or less, depending on screen size */
 }
 
-.k-layers {
-  color:orange;
-  cursor: pointer;}
-.k-headers {color:#567891;}
-.k-sip {color:#bb6611;}
-
-
-
-.grip {
-  background: #ccc;
-  width: 5px;
-  height: 100%;
-  cursor: col-resize;
+table, td, th {  
+  border: 1px solid #bbb;
+  text-align: left;
 }
 
-.dragging {
-  background-color: rgba(0, 0, 0, 0.89);
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 5px;
 }
 
 
+/* For odd rows (specific to DataTable stripes) */
+table.dataTable.stripe tbody tr:nth-child(odd) {
+  background-color: #f1f1f1 !important; /* Custom odd row color */
+}
+
+/* For even rows (specific to DataTable stripes) */
+table.dataTable.stripe tbody tr:nth-child(even) {
+  background-color: #fefefe !important; /* Custom even row color */
+}

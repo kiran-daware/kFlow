@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calls</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 <!-- DataTables CSS -->
 <link href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css" rel="stylesheet" integrity="sha384-ZVBvXH2IGOw6fHIntvmU2wOUGWutDViMwSQwdGEvaJkHVvm1S8N/HE/zBK91NXSV" crossorigin="anonymous">
 <link href="https://cdn.datatables.net/buttons/3.2.2/css/buttons.dataTables.css" rel="stylesheet" integrity="sha384-WnU9UKIFykmC5nUngG4IGkdl3+/E5Rx7JmiggfjyAY804EuDkGcxL4aJMdN5iuTJ" crossorigin="anonymous">
@@ -20,13 +21,39 @@
 <body>
     <h2>{{ pcapName }}</h2>
 
-    <ul>
-      <li>Total number of call legs: {{ callFlows|length }}</li>
-    </ul>
+    <table style="float:left; margin-right:10px;">
+      <tr>
+        <th>Summary</th>
+        <th>Count</th>
+      </tr>
+      {% for summary, count in callFlows.summary.items() %}
+      <tr>
+        <td>{{ summary }}</td>
+        <td>{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </table>
 
+    {% if callFlows.failed %}
+    <table style="float:left; margin-right:10px;">
+      <tr>
+        <th>Failed_Code</th>
+        <th>Count</th>
+      </tr>
+      {% for failed, count in callFlows.failed.items() %}
+      <tr>
+        <td>{{ failed }}</td>
+        <td>{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
 
-  <form method="post" action="/filtered-calls">
-    <input type="submit" value="Submit">
+  <div style="clear:both; margin-bottom:10px;"></div>
+
+    
+  <form method="post" id="filtered-calls" action="/filtered-calls">
+    <!-- <input type="submit" value="Submit"> -->
     <input type="hidden" name="pcap_name" value="{{ pcapName }}">
     <table id="call-table" class="display order-column stripe cell-border hover">
       <thead>
@@ -49,7 +76,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for call_id, details in callFlows.items() %}
+        {% for call_id, details in callFlows.calls.items() %}
         <tr class="selectable-row">
           <td class="row-checkbox"><input type="checkbox" name="call_ids" value="{{ call_id }}"></td>          
           <td>{{ details['start_time'] }}</td>
@@ -104,6 +131,13 @@
                   exportOptions: {
                     columns: ':not(:first-child)' // Exclude 1st column from export too
                   }
+                },
+                {
+                  text: 'Analyse Selected Calls',  // Button label
+                  action: function (e, dt, node, config) {
+                    // Trigger form submission
+                    $('form#filtered-calls').submit(); // Replace with your actual form ID
+                  }
                 }
               ]
             },
@@ -132,6 +166,19 @@
             checkbox.prop('checked', !checkbox.prop('checked'));
           }
         });
+
+        $('form#filtered-calls').on('submit', function (e) {
+          // Check if any checkbox is checked
+          if ($('input[type="checkbox"]:checked').length === 0) {
+            // No checkboxes are selected
+            alert('Please select at least one call to analyse.');
+            e.preventDefault(); // Prevent form submission
+            return false; // Stop submission
+          }
+        });
+
+
+
       });
     </script>
     

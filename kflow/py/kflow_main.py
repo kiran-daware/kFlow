@@ -57,17 +57,36 @@ def loadFromJson(path):
     with open(path, 'r') as f:
         return json.load(f)
 
+
+
 def extractCalls(pcap_filename):
 
-    jsonPath = os.path.join(tmp_data, pcap_filename + '.calls.json')
-    if os.path.exists(jsonPath):
-        return loadFromJson(jsonPath)
-
+    # jsonPath = os.path.join(tmp_data, pcap_filename + '.calls.json')
     pcap_path = os.path.join(data_path, pcap_filename)
+    jsonDirPath = f"{data_path}/tmp/{pcap_filename}/"
+    os.makedirs(jsonDirPath, exist_ok=True)
+    jsonPath = os.path.join(jsonDirPath, pcap_filename + '.calls.json')
+
+    stat = os.stat(pcap_path)
+
+    if os.path.exists(jsonPath):
+        call_flows = loadFromJson(jsonPath)
+        if stat.st_size == call_flows["meta"].get("trace_size") or stat.st_mtime == call_flows["meta"].get("trace_mtime"):
+            print("Loading from Json Cache")
+            return call_flows
+        else: print("Generating new calls.jason")
+    
+    
     limitCalls = 10000
     noOfCalls = 0
     call_flows = {}
-    status_counter = {}
+    call_flows["meta"] = {}
+    call_flows["meta"]["trace_file"] = pcap_filename
+    call_flows["meta"]["trace_size"] = stat.st_size 
+    call_flows["meta"]["trace_mtime"] = stat.st_mtime
+    call_flows["summary"] = {}
+    call_flows["failed"] = {}
+    call_flows["calls"] = {}
 
     # Define tshark fields to extract
     fields = [
@@ -102,12 +121,12 @@ def extractCalls(pcap_filename):
         dst_ip_port = pkt.get("ip.dst") + ":" + pkt.get('udp.dstport') or pkt.get('tcp.dstport')
         frame_time = pkt.get("frame.time")
 
-        if method == "INVITE" and call_id not in call_flows:
+        if method == "INVITE" and call_id not in call_flows["calls"]:
             if noOfCalls >= limitCalls:
                 print(f"Too Many Calls! Limit of {limitCalls} exceeded.")
                 break
 
-            call_flows[call_id] = {
+            call_flows["calls"][call_id] = {
                 'start_time': frame_time.rsplit(' ', 1)[0],
                 'start_time_epoch': float(pkt.get("frame.time_epoch")), #internal field
                 'src': src_ip_port,
@@ -124,55 +143,59 @@ def extractCalls(pcap_filename):
                 
             }
             noOfCalls += 1
+            call_flows["summary"]["Total Call Legs"] = call_flows["summary"].get("Total Call Legs", 0) + 1
             continue
 
-        if call_id in call_flows:
+        if call_id in call_flows["calls"]:
             event = method or status or ""
-            if call_flows[call_id]['src'] == src_ip_port:
+            if call_flows["calls"][call_id]['src'] == src_ip_port:
                 event = f"(o){event}"
-            elif call_flows[call_id]['dst'] == src_ip_port:
+            elif call_flows["calls"][call_id]['dst'] == src_ip_port:
                 event = f"(+){event}"
-            call_flows[call_id]['events'] +="_" + event
+            call_flows["calls"][call_id]['events'] +="_" + event
 
             if status and cseq_method == "INVITE":
                 if status == "200":
-                    call_flows[call_id]['status'] = "Answered"
-                    status_counter["Answered"] = status_counter.get("Answered", 0) + 1
-                    call_flows[call_id]['answer_time'] = frame_time.rsplit(' ', 1)[0]
+                    call_flows["calls"][call_id]['status'] = "Answered"
+                    call_flows["calls"][call_id]['answer_time'] = frame_time.rsplit(' ', 1)[0]
 
                 elif status.startswith("3"):
-                    call_flows[call_id]['status'] = "Redirected" + status
-                    status_counter["Redirected"] = status_counter.get("Redirected", 0) + 1
+                    call_flows["calls"][call_id]['status'] = "Redirected" + status
 
                 elif status.startswith("4") or status.startswith("5") or status.startswith("6"):
-                    failed_label = "Failed " + status
-                    call_flows[call_id]['status'] = failed_label 
-                    status_counter[failed_label] = status_counter.get(failed_label, 0) + 1
-                    status_counter["Total_Failed"] = status_counter.get("Total_Failed", 0) + 1
+                    failed_label = "Failed_" + status
+                    call_flows["calls"][call_id]['status'] = failed_label 
 
                 else: 
-                    call_flows[call_id]['status'] = status
-                    status_counter[status] = status_counter.get(status, 0) + 1
+                    call_flows["calls"][call_id]['status'] = status
             
                 continue
 
             if status == "200" and cseq_method == "BYE":
-                call_flows[call_id]['status'] = "Completed"
-                status_counter["Completed"] = status_counter.get("Completed", 0) + 1
-                call_flows[call_id]['end_time'] = frame_time.rsplit(' ', 1)[0]
+                call_flows["calls"][call_id]['status'] = "Completed"
+                call_flows["calls"][call_id]['end_time'] = frame_time.rsplit(' ', 1)[0]
                 thisTimeEpoch = float(pkt.get("frame.time_epoch"))
-                inviteTimeEpoch = call_flows[call_id]['start_time_epoch']               
+                inviteTimeEpoch = call_flows["calls"][call_id]['start_time_epoch']               
                 duration = datetime.fromtimestamp(thisTimeEpoch) - datetime.fromtimestamp(inviteTimeEpoch)
-                call_flows[call_id]['duration'] = str(duration)
+                call_flows["calls"][call_id]['duration'] = str(duration)
                 continue
+    
+    for call_id, call_data in call_flows.get("calls", {}).items():
+        status = call_data.get("status")
+        if status.startswith("Failed_"):
+            call_flows["failed"][status] = call_flows["failed"].get(status, 0) + 1
+            call_flows["summary"]["Failed"] = call_flows["summary"].get("Failed", 0) + 1
+            continue
 
+        if not status:
+            status = "NoResponse"
+            call_data["status"] = status
+
+        call_flows["summary"][status] = call_flows["summary"].get(status, 0) + 1
 
     # Cache result to json
     saveToJson(call_flows, jsonPath)
-
     return call_flows
-
-
 
 
 
