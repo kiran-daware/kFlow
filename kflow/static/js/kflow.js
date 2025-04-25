@@ -1,4 +1,5 @@
 let sipDictData = null
+let umlData = null
 let participants_orig = [];
 let participants = [];
 let k=0;
@@ -6,12 +7,29 @@ let k=0;
 fetch('/get_json?json='+ jsonName)
 .then(response => response.json())
 .then(data => {
-    sipDictData = JSON.parse(data);
-    colorForEachCallId();
-    // Use the data as needed
-    // fetchMediaInfo();
-    participants=participantsArrows();
-});
+    sipDictData = data.sequence
+    const umlLines = sipDictData.map(entry => {
+        return `"${entry.from}"->"${entry.to}" : ${entry.message}`;
+      });
+    umlData = umlLines.join('\n');      
+    // Draw the diagram
+    const diagram = Diagram.parse(umlData);
+    diagram.drawSVG('diagram', { theme: 'simple' });
+
+    // Use MutationObserver to watch for changes in the SVG container
+    const observer = new MutationObserver(() => {
+        // Call colorForEachCallId after the diagram has been rendered
+        colorForEachCallId();
+        participants=participantsArrows();
+        observer.disconnect();  // Stop observing once the function has been called
+        });
+
+    // Start observing changes in the 'diagram' container
+    const diagramElement = document.getElementById('diagram');
+    observer.observe(diagramElement, { childList: true, subtree: true });
+
+
+    });
 
 
 // Function to extract numbers from a string using regex
@@ -21,9 +39,8 @@ function extractNumbers(str) {
 }
 // show more function used in kmod.js file for signal elements to be clickable for more data
 function showMore(id) {
-    kpacketId=5
-    nid=extractNumbers(id)
-    console.log(sipDictData[nid])
+    const nid=extractNumbers(id)
+    // console.log(nid)
     packet_data = sipDictData[nid]
     // let pktContent=convertAnsiToHtml(sipDictData[nid]);
     pktContent = `<pre>${JSON.stringify(packet_data, null, 2)}</pre>`;
@@ -97,9 +114,7 @@ function colorForEachCallId() {
     signalElements.forEach(element => {
         const id = element.id;
         const nid = extractNumbers(id);
-        const pkt = sipDictData[nid];
-
-        if (!pkt || typeof pkt !== "object") return;
+        const pkt = sipDictData[nid]["packet"];
 
         const callIdRaw = pkt["sip.Call-ID"];
         if (!callIdRaw) return;
@@ -234,7 +249,7 @@ function participantsArrows() {
     // console.log(k)
     if(k==0){
         participants_orig=[...participants];
-        console.log(participants_orig)
+        // console.log(participants_orig)
         k+=1;
     };
 
@@ -263,7 +278,7 @@ function moveActor(polygon, direction){
     // console.log(umlDataNew)
 
     document.getElementById('diagram').innerHTML = '';
-    kpacketId = 1
+    kpacketId = 0 //initialise again for reloading diagram with proper nid
     diagram = Diagram.parse(umlDataNew);
     diagram.drawSVG('diagram', {theme: 'simple'});
 
@@ -272,7 +287,5 @@ function moveActor(polygon, direction){
     participants = participantsArrows();
 
 };
-
-
 
 

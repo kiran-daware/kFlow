@@ -44,7 +44,8 @@ def listFiles():
 
 
 def getJsonFile(jsonName):
-    jsonPath = os.path.join(tmp_data, jsonName)
+    pcapName = re.sub(r'\.f\d+\.json$', '', jsonName)
+    jsonPath = os.path.join(tmp_data, pcapName, jsonName)
     with open(jsonPath, 'r') as f:
         return f.read()
 
@@ -202,7 +203,7 @@ def extractCalls(pcap_filename):
 
 def generateCallFlowFilter(pcapFilename, displayFilter):
     # Track filter usage
-    trackFilterJson = os.path.join(tmp_data, pcapFilename + '.f.json')
+    trackFilterJson = os.path.join(tmp_data, pcapFilename, pcapFilename + '.f.json')
     trackFilter = loadFromJson(trackFilterJson) if os.path.exists(trackFilterJson) else {}
 
     if displayFilter not in trackFilter:
@@ -210,13 +211,12 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
         saveToJson(trackFilter, trackFilterJson)
 
     fNo = trackFilter[displayFilter]
-    flowTxtPath = os.path.join(tmp_data, f"{pcapFilename}.f{fNo}.txt")
     jsonName = f"{pcapFilename}.f{fNo}.json"
-    sipJsonPath = os.path.join(tmp_data, jsonName)
+    sipJsonPath = os.path.join(tmp_data, pcapFilename, jsonName)
 
-    # Skip if already cached
-    if os.path.exists(flowTxtPath) and os.path.exists(sipJsonPath):
-        return flowTxtPath, jsonName
+    # Skip processing json if already cached
+    if os.path.exists(sipJsonPath):
+        return jsonName
 
     pcap_file_path = os.path.join(data_path, pcapFilename)
 
@@ -255,28 +255,34 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
     ]
 
     packets = tshark_extract(pcap_file_path, fields, display_filter=displayFilter)
-    print("here")
+    
     sip_packets = {}
-    with open(flowTxtPath, 'w') as txt_file:
-        for i, pkt in enumerate(packets, start=1):
+    sip_packets["sequence"] = []
 
-            sip_packets[i] = pkt
+    for pkt in packets:
+        src_ip = pkt.get("ip.src", "?")
+        dst_ip = pkt.get("ip.dst", "?")
+        src_port = pkt.get("udp.srcport") or pkt.get("tcp.srcport") or "?"
+        dst_port = pkt.get("udp.dstport") or pkt.get("tcp.dstport") or "?"
 
-            src_ip_port = pkt.get("ip.src") + ":" + pkt.get('udp.srcport') or pkt.get('tcp.srcport')
-            dst_ip_port = pkt.get("ip.dst") + ":" + pkt.get('udp.dstport') or pkt.get('tcp.dstport')
+        src_ip_port = f"{src_ip}:{src_port}"
+        dst_ip_port = f"{dst_ip}:{dst_port}"
 
-            # Reconstruct basic SIP message summary
-            method = pkt.get("sip.Method")
-            status = pkt.get("sip.Status-Code")
-            msg = method if method else status if status else "Unknown"
+        # Reconstruct basic SIP message summary
+        msg = pkt.get("sip.Method") or pkt.get("sip.Status-Code") or "Unknown"
 
-            txt_file.write(f'\n"{src_ip_port}"->"{dst_ip_port}" : {msg}')
+        sip_packets["sequence"].append({
+            "from": src_ip_port,
+            "to": dst_ip_port,
+            "message": msg,
+            "packet": pkt
+        })
 
     # Save all packets to JSON
     with open(sipJsonPath, 'w') as json_file:
         json.dump(sip_packets, json_file, indent=2)
 
-    return flowTxtPath, jsonName
+    return jsonName
 
 
 def allPacketSummaries(pcapName, displayFilter):

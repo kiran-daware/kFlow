@@ -29,12 +29,7 @@
     let pcapName = '{{ pcapName }}'
     let jsonName = '{{ jsonName }}'
 
-    // Draw the diagram
-    let umlData = `{{ flowText|safe }}`
-    let kpacketId = 1;
-    let diagram = Diagram.parse(umlData);
-    diagram.drawSVG('diagram', {theme: 'simple'});
-
+    let kpacketId = 0; //for internal in sdjs (nid)
 
 </script>
 <script src="{{ url_for('static', filename='js/kflow.js') }}"></script>

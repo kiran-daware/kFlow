@@ -1,4 +1,4 @@
-from flask import Flask, request, Response, render_template, jsonify
+from flask import Flask, request, Response, render_template
 from kflow.py.kflow_main import uploadFile, listFiles, getJsonFile
 from kflow.py.kflow_main import generateCallFlowFilter, extractCalls, allPacketSummaries
 from kflow.py.kflow_main import allPacketSummaries
@@ -52,11 +52,9 @@ def submit():
     for call_id in call_ids[1:]:
         display_filter += f' || sip.Call-ID == "{call_id}"'  # Add OR conditions for each subsequent call ID
 
-    flowTxtPath, jsonName = generateCallFlowFilter(pcapName, display_filter) 
-    with open(flowTxtPath, 'r') as f:
-        flowText = f.read()
+    jsonName = generateCallFlowFilter(pcapName, display_filter) 
 
-    return render_template('kflow.html', flowText = flowText, pcapName = pcapName, jsonName = jsonName)
+    return render_template('kflow.html', pcapName = pcapName, jsonName = jsonName)
 
 
 @app.route('/get_json')
@@ -66,7 +64,7 @@ def get_json():
         return "Error: 'filename' parameter is missing from the URL"
     
     flowJson = getJsonFile(jsonName)
-    return jsonify(flowJson)
+    return flowJson
 
 
 
