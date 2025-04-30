@@ -75,7 +75,8 @@ def extractCalls(pcap_filename):
         if stat.st_size == call_flows["meta"].get("trace_size") or stat.st_mtime == call_flows["meta"].get("trace_mtime"):
             print("Loading from Json Cache")
             return call_flows
-        else: print("Generating new calls.jason")
+        else:
+            print("Generating new calls.jason")
     
     
     limitCalls = 10000
@@ -87,7 +88,7 @@ def extractCalls(pcap_filename):
     call_flows["meta"]["trace_mtime"] = stat.st_mtime
     call_flows["summary"] = {}
     call_flows["failed"] = {}
-    call_flows["calls"] = {}
+    call_flows["calls"] = {} #Here, can try to use callid and src ip tuple as a key for dictionary
 
     # Define tshark fields to extract
     fields = [
@@ -237,15 +238,10 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
         # SIP protocol fields
         "sip.Method",
         "sip.Status-Code",
-        "sip.CSeq",
-        "sip.CSeq.method",
-        "sip.Call-ID",
-        "sip.from.addr",
-        "sip.to.addr",
-        "sip.Contact",
-        "sip.User-Agent",
-        "sip.Via",
         "sip.Request-Line",
+        "sip.Status-Line",
+        "sip.msg_hdr",
+        "sip.msg_body",
 
         # SDP fields (media/session negotiation)
         "sdp.connection_info",
@@ -271,11 +267,24 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
         # Reconstruct basic SIP message summary
         msg = pkt.get("sip.Method") or pkt.get("sip.Status-Code") or "Unknown"
 
+        sip_headers = [
+            pkt.get("sip.Request-Line"),
+            pkt.get("sip.Status-Line"),
+            pkt.get("sip.msg_hdr")
+        ]
+
+        pkt_body = pkt.get("sip.msg_body")
+
+        sip_packet = "\r\n".join(filter(None, sip_headers))
+        if pkt_body:
+            sip_packet += "\r\n" + pkt_body
+
+
         sip_packets["sequence"].append({
             "from": src_ip_port,
             "to": dst_ip_port,
             "message": msg,
-            "packet": pkt
+            "packet": sip_packet, 
         })
 
     # Save all packets to JSON

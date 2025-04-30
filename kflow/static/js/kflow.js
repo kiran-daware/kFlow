@@ -37,13 +37,42 @@ function extractNumbers(str) {
     const match = str.match(/\d+/); // Match one or more digits using regex
     return match ? parseInt(match[0]) : null; // Parse the matched digits to integer
 }
+
+
+
+function escapeHtml(text) {
+    return text
+      .replace(/&/g, '&amp;')   // Must come first
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }  
+function formatSipPacket(raw) {
+let unescaped = raw
+    .replace(/\\r\\n/g, '\r\n')
+    .replace(/\\\\/g, '\\');
+
+const [headers, hexBody] = unescaped.split('\r\n\r\n');
+let decodedBody = '';
+if (hexBody) {
+    decodedBody = hexBody.match(/.{1,2}/g)
+    .map(b => String.fromCharCode(parseInt(b, 16)))
+    .join('');
+}
+
+const fullText = `${headers}\n\n${decodedBody}`;
+return escapeHtml(fullText);
+}
+
+
 // show more function used in kmod.js file for signal elements to be clickable for more data
 function showMore(id) {
     const nid=extractNumbers(id)
     // console.log(nid)
-    packet_data = sipDictData[nid]
+    packet_data = sipDictData[nid].packet
     // let pktContent=convertAnsiToHtml(sipDictData[nid]);
-    pktContent = `<pre>${JSON.stringify(packet_data, null, 2)}</pre>`;
+    const rawPacket = sipDictData[nid].packet;
+    const formatted = formatSipPacket(rawPacket);
+    pktContent = `<pre style="white-space: pre-wrap; font-family: monospace;">${formatted}</pre>`;
     document.getElementById("popup-content").innerHTML = pktContent;
     document.getElementById("popup-modal").style.display = "block";
     collapseSipLayers();
