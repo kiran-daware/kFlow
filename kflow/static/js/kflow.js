@@ -72,42 +72,11 @@ function showMore(id) {
     pktContent = `<pre style="white-space: pre-wrap; font-family: monospace;">${formatted}</pre>`;
     document.getElementById("popup-content").innerHTML = pktContent;
     document.getElementById("popup-modal").style.display = "block";
-    collapseSipLayers();
 }
 
 function closePopup() {
     document.getElementById("popup-modal").style.display = "none";
 }
-
-
-// to make collapsible sip layers
-function collapseSipLayers(){
-    let layers = document.getElementsByClassName("k-layers");
-
-    // Initially hide all content except for the last one
-    for (let i = 0; i < layers.length -1; i++) {
-        let nextElement = layers[i].nextElementSibling;
-        while (nextElement && !nextElement.classList.contains("k-layers")) {
-            nextElement.style.display = 'none';
-            nextElement = nextElement.nextElementSibling;
-        }
-    }
-
-    for (let i = 0; i < layers.length; i++) {
-        layers[i].addEventListener("click", function() {
-          this.classList.toggle("active");
-          let content = this.nextElementSibling;
-          while (content && !content.classList.contains("k-layers")) {
-            if (content.style.display === "inline") {
-              content.style.display = "none";
-            } else {
-              content.style.display = "inline";
-            }
-            content = content.nextElementSibling;
-          }
-        });
-    };
-};
 
 
 
@@ -153,67 +122,6 @@ function colorForEachCallId() {
 
 
 
-
-function fetchMediaInfo(){
-    let signalElements = document.querySelectorAll(".signal");
-    let currIndx = 0;
-    let callIdClass = {};
-    let kClass = ["kcid1", "kcid2", "kcid3", "kcid4", "kcid5"];
-    
-
-    signalElements.forEach(element => {
-        // Get the ID of the current element
-        let id = element.id;
-        nid=extractNumbers(id)
-        let pktContent=sipDictData[nid];
-        // console.log(pktContent)
-        if (pktContent && pktContent.includes("Media Description, name and address (m):")) {
-            let mediaLine = pktContent.match(/Media Description, name and address \(m\):(.+)/)[1];
-            mediaLine = mediaLine.replace(/\x1b\[[0-9;]*m/g, '');
-            let maxLen = 28
-            if (mediaLine.length > maxLen){
-                mediaLine = mediaLine.substring(0, maxLen) + "..."
-            }
-            let txtLenPx = mediaLine.length * 5
-
-            // console.log("Media Line for", id + ":", mediaLine);
-            let textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
-
-            let referenceLine = element.querySelector("line");
-            // Set attributes for the text element
-            let refX1 = parseFloat(referenceLine.getAttribute("x1"));
-            let refX2 = parseFloat(referenceLine.getAttribute("x2"));
-            let refY = parseFloat(referenceLine.getAttribute("y1"));
-            let refX = Math.floor(((refX2 - refX1) - txtLenPx)/2)
-            // console.log(refX)
-            let newX = refX1 + refX
-            let newY = refY + 10
-
-            textElement.setAttribute("x", newX);
-            textElement.setAttribute("y", newY);
-            textElement.setAttribute("style", "font-size: 10px; font-family: 'Andale Mono', monospace;")
-            textElement.setAttribute("fill", "black");
-            textElement.textContent = mediaLine;
-
-            element.appendChild(textElement);
-        };
-
-        // class based on call-id
-
-        if (pktContent && pktContent.includes("Call-ID:")) {
-            let callId = pktContent.match(/Call-ID:(.+)/)[1];
-            callId = callId.replace(/\x1b\[[0-9;]*m/g, '');
-            callId = callId.trim()
-            
-            if (!(callId in callIdClass)){
-                callIdClass[callId] = kClass[currIndx];
-                currIndx = (currIndx + 1) % kClass.length;
-            };
-            element.classList.add(callIdClass[callId])
-        };
-    });
-
-};
 
 // Move participant actor left or right
 
@@ -302,7 +210,7 @@ function moveActor(polygon, direction){
     diagram = Diagram.parse(umlDataNew);
     diagram.drawSVG('diagram', {theme: 'simple'});
 
-    // fetchMediaInfo();
+
     colorForEachCallId();
     participants = participantsArrows();
 
