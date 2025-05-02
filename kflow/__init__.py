@@ -1,9 +1,10 @@
-from flask import Flask, request, Response, render_template
+from flask import Flask, request, render_template, flash
 from kflow.py.kflow_main import uploadFile, listFiles, getJsonFile
 from kflow.py.kflow_main import generateCallFlowFilter, extractCalls, allPacketSummaries
-from kflow.py.kflow_main import allPacketSummaries
+from kflow.py.kflow_main import deleteFile
 
 app = Flask(__name__)
+app.secret_key = 'dev'
 
 @app.route('/')
 def index():
@@ -24,6 +25,22 @@ def allPackets():
 
 
 
+@app.route('/delete-file', methods=['POST'])
+def delete():
+    filename = request.form.get('filename')
+    if filename:
+        success = deleteFile(filename)
+        if success is True:
+            flash(f"File '{filename}' deleted successfully.", 'success')
+        else:
+            flash(success[0], 'error')
+    else:
+        flash("No filename provided.", 'error')
+    
+    files = listFiles()
+    return render_template('index.html', files=files)
+
+
 @app.route('/calls')
 def kflow():
     pcapName = request.args.get('pcapname')
@@ -40,6 +57,7 @@ def kflow():
         return "Error: 'filename' parameter is missing from the URL"
     
     return render_template('calls.html', pcapName = pcapName, callFlows = callFlows)
+
 
 
 

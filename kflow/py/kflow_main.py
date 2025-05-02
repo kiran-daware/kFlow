@@ -42,6 +42,16 @@ def listFiles():
             files.append(filename)
     return files
 
+def deleteFile(filename):
+    filepath = os.path.join(data_path, filename)
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return True
+        else:
+            return (f"File '{filename}' not found.", 'error')
+    except Exception as e:
+        return (f"Error deleting file '{filename}': {e}", 'error')
 
 def getJsonFile(jsonName):
     pcapName = re.sub(r'\.f\d+\.json$', '', jsonName)
