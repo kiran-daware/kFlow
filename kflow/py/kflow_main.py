@@ -2,6 +2,7 @@ from flask import request, jsonify
 import re
 import ujson as json
 import os
+import shutil
 from datetime import datetime
 from .tshark_extract import tshark_extract
 
@@ -24,7 +25,7 @@ def uploadFile():
         fileSavePath=os.path.join(data_path, filename)
         file.save(fileSavePath)
 
-        return jsonify({'message': 'File uploaded successfully'}), 200
+        return jsonify({'message': f'File "{filename}" uploaded successfully'}), 200
 
 
 def cleanFilename(filename):
@@ -44,7 +45,11 @@ def listFiles():
 
 def deleteFile(filename):
     filepath = os.path.join(data_path, filename)
+    tmpDataDir = os.path.join(tmp_data, filename)
     try:
+        if os.path.exists(tmpDataDir):
+            shutil.rmtree(tmpDataDir)
+
         if os.path.exists(filepath):
             os.remove(filepath)
             return True

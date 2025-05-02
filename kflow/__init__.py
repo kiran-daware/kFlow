@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, flash
+from flask import Flask, request, render_template, flash, redirect, url_for
 from kflow.py.kflow_main import uploadFile, listFiles, getJsonFile
 from kflow.py.kflow_main import generateCallFlowFilter, extractCalls, allPacketSummaries
 from kflow.py.kflow_main import deleteFile
@@ -36,9 +36,8 @@ def delete():
             flash(success[0], 'error')
     else:
         flash("No filename provided.", 'error')
-    
-    files = listFiles()
-    return render_template('index.html', files=files)
+
+    return redirect(url_for('index'))
 
 
 @app.route('/calls')
