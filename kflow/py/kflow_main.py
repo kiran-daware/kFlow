@@ -224,7 +224,6 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
     # Run tshark to get essential fields
     fields = [
         # General frame info
-        "frame.number",
         "frame.time",
         "frame.len",
 
@@ -243,11 +242,10 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
         "sip.msg_hdr",
         "sip.msg_body",
 
-        # SDP fields (media/session negotiation)
-        "sdp.connection_info",
-        "sdp.media",
-        "sdp.session_name",
-        "sdp.owner",
+        # Additional Fields
+        "sip.Call-ID",
+        "sdp.media"
+
     ]
 
     packets = tshark_extract(pcap_file_path, fields, display_filter=displayFilter)
@@ -266,8 +264,12 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
 
         # Reconstruct basic SIP message summary
         msg = pkt.get("sip.Method") or pkt.get("sip.Status-Code") or "Unknown"
+        if pkt.get("sdp.media"):
+            msg += " (" + pkt.get("sdp.media") + ")"
 
         sip_headers = [
+            pkt.get("frame.time"),
+            "Frame.Len = " + pkt.get("frame.len") + "\r\n",
             pkt.get("sip.Request-Line"),
             pkt.get("sip.Status-Line"),
             pkt.get("sip.msg_hdr")
@@ -285,6 +287,7 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
             "to": dst_ip_port,
             "message": msg,
             "packet": sip_packet, 
+            "sip.Call-ID": pkt.get("sip.Call-ID"),
         })
 
     # Save all packets to JSON

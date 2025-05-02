@@ -18,7 +18,7 @@ fetch('/get_json?json='+ jsonName)
 
     // Use MutationObserver to watch for changes in the SVG container
     const observer = new MutationObserver(() => {
-        // Call colorForEachCallId after the diagram has been rendered
+        // Call functions after the diagram has been rendered
         colorForEachCallId();
         participants=participantsArrows();
         observer.disconnect();  // Stop observing once the function has been called
@@ -28,18 +28,17 @@ fetch('/get_json?json='+ jsonName)
     const diagramElement = document.getElementById('diagram');
     observer.observe(diagramElement, { childList: true, subtree: true });
 
-
     });
 
 
-// Function to extract numbers from a string using regex
+// Function to extract numbers kid (line element id)
 function extractNumbers(str) {
-    const match = str.match(/\d+/); // Match one or more digits using regex
-    return match ? parseInt(match[0]) : null; // Parse the matched digits to integer
+    const match = str.match(/\d+/);
+    return match ? parseInt(match[0]) : null;
 }
 
 
-
+// function to escape html and hex to text for SIP packet data
 function escapeHtml(text) {
     return text
       .replace(/&/g, '&amp;')   // Must come first
@@ -51,7 +50,7 @@ let unescaped = raw
     .replace(/\\r\\n/g, '\r\n')
     .replace(/\\\\/g, '\\');
 
-const [headers, hexBody] = unescaped.split('\r\n\r\n');
+const [headers, hexBody] = unescaped.split('\r\n\r\n\r\n');
 let decodedBody = '';
 if (hexBody) {
     decodedBody = hexBody.match(/.{1,2}/g)
@@ -67,9 +66,7 @@ return escapeHtml(fullText);
 // show more function used in kmod.js file for signal elements to be clickable for more data
 function showMore(id) {
     const nid=extractNumbers(id)
-    // console.log(nid)
     packet_data = sipDictData[nid].packet
-    // let pktContent=convertAnsiToHtml(sipDictData[nid]);
     const rawPacket = sipDictData[nid].packet;
     const formatted = formatSipPacket(rawPacket);
     pktContent = `<pre style="white-space: pre-wrap; font-family: monospace;">${formatted}</pre>`;
@@ -77,8 +74,8 @@ function showMore(id) {
     document.getElementById("popup-modal").style.display = "block";
     collapseSipLayers();
 }
+
 function closePopup() {
-    // Hide the modal
     document.getElementById("popup-modal").style.display = "none";
 }
 
@@ -114,11 +111,11 @@ function collapseSipLayers(){
 
 
 
+
 // ************* different color according to call_id
 
-
 function generateColorClass(index, callIdClassMap) {
-    const hue = (index * 137.508) % 360;  // Using golden angle for good distribution
+    const hue = (index * 137.508) % 360; 
     const color = `hsl(${hue}, 70%, 60%)`;
     const className = `kcid${index}`;
 
@@ -133,22 +130,16 @@ function generateColorClass(index, callIdClassMap) {
     return className;
 }
 
-
 function colorForEachCallId() {
     const signalElements = document.querySelectorAll(".signal");
     const callIdToClass = {};
     const injectedStyles = {};
     let currIndex = 1;
-
     signalElements.forEach(element => {
         const id = element.id;
         const nid = extractNumbers(id);
-        const pkt = sipDictData[nid]["packet"];
-
-        const callIdRaw = pkt["sip.Call-ID"];
-        if (!callIdRaw) return;
-
-        const callId = callIdRaw.replace(/\x1b\[[0-9;]*m/g, '').trim();
+        const pkt = sipDictData[nid];
+        const callId = pkt["sip.Call-ID"];        
 
         if (!(callId in callIdToClass)) {
             callIdToClass[callId] = generateColorClass(currIndex, injectedStyles);
