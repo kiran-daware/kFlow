@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calls</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+<!-- DataTables CSS -->
+<link href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css" rel="stylesheet" integrity="sha384-ZVBvXH2IGOw6fHIntvmU2wOUGWutDViMwSQwdGEvaJkHVvm1S8N/HE/zBK91NXSV" crossorigin="anonymous">
+<link href="https://cdn.datatables.net/buttons/3.2.2/css/buttons.dataTables.css" rel="stylesheet" integrity="sha384-WnU9UKIFykmC5nUngG4IGkdl3+/E5Rx7JmiggfjyAY804EuDkGcxL4aJMdN5iuTJ" crossorigin="anonymous">
+<link href="https://cdn.datatables.net/fixedheader/4.0.1/css/fixedHeader.dataTables.css" rel="stylesheet" integrity="sha384-63Mv1JvQ0dybFXkzVnkoPv/pNrcKHYBp3CEc+FLGR2jWxMRz42UfRpoSc7mof/C4" crossorigin="anonymous">
+ 
+<script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha384-ogycHROOTGA//2Q8YUfjz1Sr7xMOJTUmY2ucsPVuXAg4CtpgQJQzGZsX768KqetU" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/2.2.2/js/dataTables.js" integrity="sha384-gGekiWQ/bm8p71RTsvhPShoIBxcf8BsVjRTi0WY8FvxuQa2nKS0PKHiSXV9nfW/A" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/dataTables.buttons.js" integrity="sha384-wCLG3FbyFPnMZM65D+pam9KW+2joK88dh4jfSMK0OuMQ2cBQHV0t55OqmQduaQ1S" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.colVis.js" integrity="sha384-i6Z7TESDTMWWMiPn4glNtpuvZKnfRC8IRXtzYgtiFgpuLgRPoUyRO4uJJ8H22IyH" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.2/js/buttons.html5.js" integrity="sha384-r5RumiuQhALaYWd8i8v0DxCjEXRayyj6nl1wP379+GexLAvE4yuLNoyPEvE6hzDu" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/fixedheader/4.0.1/js/dataTables.fixedHeader.js" integrity="sha384-OoxvLxESIu5jcpOCEZKtEwi9qSMqzICOeIU1p993dTvbtk7/yp69NojbtKY0ejmf" crossorigin="anonymous"></script>
+
+</head>
+<body>
+    <h2>{{ pcapName }}</h2>
+
+    <table style="float:left; margin-right:10px;">
+      <tr>
+        <th>Summary</th>
+        <th>Count</th>
+      </tr>
+      {% for summary, count in callFlows.summary.items() %}
+      <tr>
+        <td>{{ summary }}</td>
+        <td>{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    {% if callFlows.failed %}
+    <table style="float:left; margin-right:10px;">
+      <tr>
+        <th>Failed_Code</th>
+        <th>Count</th>
+      </tr>
+      {% for failed, count in callFlows.failed.items() %}
+      <tr>
+        <td>{{ failed }}</td>
+        <td>{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+  <div style="clear:both; margin-bottom:10px;"></div>
+
+    
+  <form method="post" id="filtered-calls" action="/filtered-calls">
+    <!-- <input type="submit" value="Submit"> -->
+    <input type="hidden" name="pcap_name" value="{{ pcapName }}">
+    <table id="call-table" class="display order-column stripe cell-border hover">
+      <thead>
+        <tr>
+          <th>.</th>          
+          <th>Start Time</th>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>FromNumber</th>
+          <th>DialedNumber</th>
+          <th>Status</th>
+          <th>AnswerTime</th>
+          <th>EndTime</th>
+          <th>Duration</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Call ID</th>
+          <th>Events</th>            
+          
+        </tr>
+      </thead>
+      <tbody>
+        {% for call_id, details in callFlows.calls.items() %}
+        <tr class="selectable-row">
+          <td class="row-checkbox"><input type="checkbox" name="call_ids" value="{{ call_id }}"></td>          
+          <td>{{ details['start_time'] }}</td>
+          <td>{{ details['src'] }}</td>
+          <td>{{ details['dst'] }}</td>
+          <td>{{ details['from_no'] }}</td>
+          <td>{{ details['dialed_no'] }}</td>
+          <td>{{ details['status'] }}</td>
+          <td>{{ details['answer_time'] }}</td>
+          <td>{{ details['end_time'] }}</td>
+          <td>{{ details['duration'] }}</td>
+          <td>{{ details['from'] }}</td>
+          <td>{{ details['to'] }}</td>
+          <td>{{ call_id }}</td>
+          <td>{{ details['events'] }}</td>
+          
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+
+
+    <script>
+      $(document).ready(function () {
+        $('#call-table').DataTable({
+          autoWidth: true,
+          paging: true,
+          searching: true,
+          ordering: true,
+          order: [[1, 'desc']],
+          info: true,
+          columnDefs: [
+            { orderable: false, targets: 0 }, // prevent checkbox column from being sorted
+          ],
+          fixedHeader: {
+            header: true,
+            footer: false
+          },
+          layout: {
+            topStart: {
+              buttons: [
+                {
+                  extend: 'colvis',
+                  text: 'Filter columns', // Custom label
+                  columns: ':not(:first-child)' // Exclude 1st column (checkbox)
+                },
+                {
+                  extend: 'csv',
+                  text: 'Export to CSV',
+                  exportOptions: {
+                    columns: ':not(:first-child)' // Exclude 1st column from export too
+                  }
+                },
+                {
+                  text: 'Analyse Selected Calls',  // Button label
+                  action: function (e, dt, node, config) {
+                    // Trigger form submission
+                    $('form#filtered-calls').submit(); // Replace with your actual form ID
+                  }
+                }
+              ]
+            },
+            topEnd: {
+              search: {
+                placeholder: 'Search table...'
+              }
+            },
+            bottomStart: {
+              info: true
+            },
+            bottomEnd: {
+              pageLength: true, 
+              paging: true
+            }
+          }
+
+        });
+
+
+
+        // Row click toggles checkbox
+        $('#call-table').on('click', 'tr.selectable-row', function (e) {
+          if (!$(e.target).is('input')) {
+            const checkbox = $(this).find('input[type="checkbox"]');
+            checkbox.prop('checked', !checkbox.prop('checked'));
+          }
+        });
+
+        $('form#filtered-calls').on('submit', function (e) {
+          // Check if any checkbox is checked
+          if ($('input[type="checkbox"]:checked').length === 0) {
+            // No checkboxes are selected
+            alert('Please select at least one call to analyse.');
+            e.preventDefault(); // Prevent form submission
+            return false; // Stop submission
+          }
+        });
+
+
+
+      });
+    </script>
+    
+
+
+
+</body>
+</html>

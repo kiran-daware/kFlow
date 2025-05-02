@@ -54,12 +54,11 @@ function handleFiles(files) {
             fetch('/pcapupload', {
                 method: 'POST',
                 body: formData
-            }).then(response => {
-                if (response.ok) {
-                    alert('File uploaded successfully');
-                } else {
-                    alert('Failed to upload file');
-                }
+            }).then(response => response.json())
+            .then(data => {
+                alert(data.message);  // shows the actual message from Flask
+                window.location.reload();
+
             }).catch(error => {
                 console.error('Error uploading file:', error);
             });
@@ -70,16 +69,9 @@ function handleFiles(files) {
 }
 
 function isWiresharkFile(filename) {
-    return filename.endsWith('.pcap') || filename.endsWith('.pcapng');
+    return filename.endsWith('.pcap') || filename.endsWith('.pcapng') || filename.endsWith('.cap');
 }
 uploadBtn.addEventListener('click', () => {
     fileInput.click();
 });
 
-
-// function to call python flow function or delete files function
-// function callPyKflow(filename) {
-//     if(action === 'kflow') {
-//         fetch('/kflow?filename=' + filename)
-//     }
-// }

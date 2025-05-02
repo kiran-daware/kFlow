@@ -625,7 +625,7 @@
     var DIAGRAM_MARGIN = 10,
         ACTOR_MARGIN = 10,
         ACTOR_PADDING = 10,
-        SIGNAL_MARGIN = 5,
+        SIGNAL_MARGIN = 8, //kmod margin change from 5 to 8
         SIGNAL_PADDING = 5,
         NOTE_MARGIN = 10,
         NOTE_PADDING = 5,
