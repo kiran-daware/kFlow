@@ -69,7 +69,7 @@ function handleFiles(files) {
 }
 
 function isWiresharkFile(filename) {
-    return filename.endsWith('.pcap') || filename.endsWith('.pcapng');
+    return filename.endsWith('.pcap') || filename.endsWith('.pcapng') || filename.endsWith('.cap');
 }
 uploadBtn.addEventListener('click', () => {
     fileInput.click();
