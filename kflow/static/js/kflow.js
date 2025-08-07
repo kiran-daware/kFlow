@@ -146,12 +146,19 @@ function participantsArrows() {
         leftArrow.setAttribute('fill', '#aaa');
         leftArrow.setAttribute('style', 'cursor: pointer;');
         leftArrow.setAttribute('onclick', 'moveActor(this, -1)')
+        const leftTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        leftTitle.textContent = 'Move to Left';
+        leftArrow.appendChild(leftTitle);
 
         rightArrow.setAttribute('class', 'k-right-arrow');
         rightArrow.setAttribute('points', rightP);
         rightArrow.setAttribute('fill', '#aaa');
         rightArrow.setAttribute('style', 'cursor: pointer;');
         rightArrow.setAttribute('onclick', 'moveActor(this, 1)');
+        const rightTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        rightTitle.textContent = 'Move to Right';
+        rightArrow.appendChild(rightTitle);
+
 
         element.appendChild(leftArrow);
         element.appendChild(rightArrow);

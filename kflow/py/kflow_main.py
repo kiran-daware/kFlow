@@ -13,14 +13,14 @@ data_path = os.path.abspath(os.path.join(base_dir, 'kflow_data'))
 tmp_data = os.path.abspath(os.path.join(data_path, 'tmp'))
 
 
-def uploadFile():
+def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     if file:
-        filename = cleanFilename(file.filename)
+        filename = clean_filename(file.filename)
         # Save the file to the desired location
         fileSavePath=os.path.join(data_path, filename)
         file.save(fileSavePath)
@@ -28,7 +28,7 @@ def uploadFile():
         return jsonify({'message': f'File "{filename}" uploaded successfully'}), 200
 
 
-def cleanFilename(filename):
+def clean_filename(filename):
     # Replace spaces with underscores
     cleaned_filename = filename.replace(' ', '_')
     # Remove any characters that are not alphanumeric, underscores, hyphens, or periods
@@ -36,14 +36,14 @@ def cleanFilename(filename):
     return cleaned_filename
 
 
-def listFiles():
+def list_files():
     files = []
     for filename in os.listdir(data_path):
         if os.path.isfile(os.path.join(data_path, filename)):
             files.append(filename)
     return files
 
-def deleteFile(filename):
+def delete_file(filename):
     filepath = os.path.join(data_path, filename)
     tmpDataDir = os.path.join(tmp_data, filename)
     try:
@@ -58,24 +58,24 @@ def deleteFile(filename):
     except Exception as e:
         return (f"Error deleting file '{filename}': {e}", 'error')
 
-def getJsonFile(jsonName):
+def get_json_file(jsonName):
     pcapName = re.sub(r'\.f\d+\.json$', '', jsonName)
     jsonPath = os.path.join(tmp_data, pcapName, jsonName)
     with open(jsonPath, 'r') as f:
         return f.read()
 
 
-def saveToJson(data, path):
+def save_to_json(data, path):
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)  # Set indent=2 only if human-readable; remove for performance
 
-def loadFromJson(path):
+def load_from_json(path):
     with open(path, 'r') as f:
         return json.load(f)
 
 
 
-def extractCalls(pcap_filename):
+def extract_calls(pcap_filename):
 
     # jsonPath = os.path.join(tmp_data, pcap_filename + '.calls.json')
     pcap_path = os.path.join(data_path, pcap_filename)
@@ -86,12 +86,12 @@ def extractCalls(pcap_filename):
     stat = os.stat(pcap_path)
 
     if os.path.exists(jsonPath):
-        call_flows = loadFromJson(jsonPath)
+        call_flows = load_from_json(jsonPath)
         if stat.st_size == call_flows["meta"].get("trace_size") or stat.st_mtime == call_flows["meta"].get("trace_mtime"):
             print("Loading from Json Cache")
             return call_flows
         else:
-            print("Generating new calls.jason")
+            print("Generating new calls.json")
     
     
     limitCalls = 10000
@@ -119,7 +119,6 @@ def extractCalls(pcap_filename):
         "sip.CSeq.method"
     ]
 
-    # Use your reusable tshark extractor
     packets = tshark_extract(
         pcap_path,
         fields=fields,
@@ -163,7 +162,7 @@ def extractCalls(pcap_filename):
             call_flows["summary"]["Total Call Legs"] = call_flows["summary"].get("Total Call Legs", 0) + 1
             continue
 
-        if call_id in call_flows["calls"]:
+        elif call_id in call_flows["calls"]:
             event = method or status or ""
             if call_flows["calls"][call_id]['src'] == src_ip_port:
                 event = f"(o){event}"
@@ -211,30 +210,29 @@ def extractCalls(pcap_filename):
         call_flows["summary"][status] = call_flows["summary"].get(status, 0) + 1
 
     # Cache result to json
-    saveToJson(call_flows, jsonPath)
+    save_to_json(call_flows, jsonPath)
     return call_flows
 
 
 
-
-def generateCallFlowFilter(pcapFilename, displayFilter):
+def generate_call_flow_filter(pcap_filename, display_filter):
     # Track filter usage
-    trackFilterJson = os.path.join(tmp_data, pcapFilename, pcapFilename + '.f.json')
-    trackFilter = loadFromJson(trackFilterJson) if os.path.exists(trackFilterJson) else {}
+    track_filter_json = os.path.join(tmp_data, pcap_filename, pcap_filename + '.f.json')
+    track_filter = load_from_json(track_filter_json) if os.path.exists(track_filter_json) else {}
 
-    if displayFilter not in trackFilter:
-        trackFilter[displayFilter] = len(trackFilter) + 1
-        saveToJson(trackFilter, trackFilterJson)
+    if display_filter not in track_filter:
+        track_filter[display_filter] = len(track_filter) + 1
+        save_to_json(track_filter, track_filter_json)
 
-    fNo = trackFilter[displayFilter]
-    jsonName = f"{pcapFilename}.f{fNo}.json"
-    sipJsonPath = os.path.join(tmp_data, pcapFilename, jsonName)
+    fNo = track_filter[display_filter]
+    json_name = f"{pcap_filename}.f{fNo}.json"
+    sip_json_path = os.path.join(tmp_data, pcap_filename, json_name)
 
     # Skip processing json if already cached
-    if os.path.exists(sipJsonPath):
-        return jsonName
+    if os.path.exists(sip_json_path):
+        return json_name
 
-    pcap_file_path = os.path.join(data_path, pcapFilename)
+    pcap_file_path = os.path.join(data_path, pcap_filename)
 
     # Run tshark to get essential fields
     fields = [
@@ -263,7 +261,7 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
 
     ]
 
-    packets = tshark_extract(pcap_file_path, fields, display_filter=displayFilter)
+    packets = tshark_extract(pcap_file_path, fields, display_filter=display_filter)
     
     sip_packets = {}
     sip_packets["sequence"] = []
@@ -306,13 +304,13 @@ def generateCallFlowFilter(pcapFilename, displayFilter):
         })
 
     # Save all packets to JSON
-    with open(sipJsonPath, 'w') as json_file:
+    with open(sip_json_path, 'w') as json_file:
         json.dump(sip_packets, json_file, indent=2)
 
-    return jsonName
+    return json_name
 
 
-def allPacketSummaries(pcapName, displayFilter):
+def all_packet_summaries(pcapName, displayFilter):
     pcap_file_path = os.path.join(data_path, pcapName)
     
     # These fields match pyshark's summary fields

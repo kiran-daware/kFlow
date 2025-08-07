@@ -1,15 +1,7 @@
 import subprocess
 
 def tshark_extract(pcap_path, fields, display_filter="sip", limit=None):
-    """
-    Extract specific fields from a pcap file using tshark.
 
-    :param pcap_path: Path to the .pcap file
-    :param fields: List of tshark fields to extract (e.g. ['frame.time', 'ip.src', 'sip.Call-ID'])
-    :param display_filter: Tshark display filter (e.g. 'sip', 'sip.Method=="INVITE"')
-    :param limit: Optional limit to the number of packets
-    :return: List of dictionaries, each with keys matching the field names
-    """
     base_cmd = [
         "tshark",
         "-r", pcap_path,
@@ -25,26 +17,60 @@ def tshark_extract(pcap_path, fields, display_filter="sip", limit=None):
     if limit:
         base_cmd.extend(["-c", str(limit)])
 
+    parsed_data = []
     try:
-        result = subprocess.run(
+        with subprocess.Popen(
             base_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            check=True
-        )
+        ) as proc:
+            for line in proc.stdout:
+                values = line.strip().split('|')
+                if len(values) == len(fields):
+                    entry = dict(zip(fields, values))
+                    parsed_data.append(entry)
 
-        parsed_data = []
-        for line in result.stdout.splitlines():
-            values = line.strip().split('|')
-            entry = dict(zip(fields, values))
-            parsed_data.append(entry)
+            # Check for errors after the process has finished
+            stderr_output = proc.stderr.read()
+            if proc.returncode != 0:
+                print(f"[tshark_extract_stream] TShark process failed with error:\n{stderr_output}")
 
-        return parsed_data
 
-    except subprocess.CalledProcessError as e:
-        print(f"[tshark_extract] Error running tshark: {e.stderr}")
+    except FileNotFoundError:
+        print("Error: TShark not found. Make sure it's installed and in your system's PATH.")
         return []
+    except Exception as e:
+        print(f"[tshark_extract_stream] An unexpected error occurred: {e}")
+        return []
+
+    return parsed_data
+
+
+
+
+
+
+
+    #     result = subprocess.run(
+    #         base_cmd,
+    #         stdout=subprocess.PIPE,
+    #         stderr=subprocess.PIPE,
+    #         text=True,
+    #         check=True
+    #     )
+
+    #     parsed_data = []
+    #     for line in result.stdout.splitlines():
+    #         values = line.strip().split('|')
+    #         entry = dict(zip(fields, values))
+    #         parsed_data.append(entry)
+
+    #     return parsed_data
+
+    # except subprocess.CalledProcessError as e:
+    #     print(f"[tshark_extract] Error running tshark: {e.stderr}")
+    #     return []
 
 
 
